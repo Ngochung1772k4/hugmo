@@ -35,6 +35,8 @@ Chạy file migration rồi seed trong Supabase SQL Editor, theo thứ tự:
 3. `seed/topik_writing_q54_environment_seed.sql`
 4. `migrations/20260928000007_q54_custom_topics_and_global_banks.sql`
 5. `migrations/20260928000008_q54_translation_workbench.sql`
+6. `migrations/20260928000009_q54_topic_pattern_mappings.sql`
+7. `seed/topik_writing_q54_education_personal_seed.sql`
 
 Sau đó deploy hai Edge Function (cùng project Supabase đang dùng):
 
@@ -47,5 +49,7 @@ npx supabase functions deploy generate-q54-translation-hint --project-ref vkqhsp
 ```
 
 Migration `00007` cho phép một đề ngoài taxonomy seed được lưu thành topic `PRIVATE` của chính người dùng, lưu `subtopic_ko`, và bổ sung Global Bank theo functional group. Nó không lấy Bank từ một topic khác.
+
+Seed `topik_writing_q54_education_personal_seed.sql` bổ sung Content Bank đã biên soạn cho `교육 / 자기계발` và `개인정보 / 디지털 사회`: đủ bốn functional group, collocation theo topic, pattern global được map theo topic, ví dụ Hàn-Việt và 12 bài dịch mỗi topic. Seed có thể chạy lại an toàn và tự kiểm tra số lượng tối thiểu.
 
 Hai function dùng `GROQ_API_KEY` đã cấu hình server-side. Có thể đặt riêng model Q54 qua secret `GROQ_Q54_MODEL`; nếu không có, function dùng `GROQ_KOREAN_MODEL` rồi mới dùng model mặc định.

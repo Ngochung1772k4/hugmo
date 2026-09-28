@@ -11,7 +11,7 @@ export function Q54HubPage() {
   const { isDemo } = useAuth();
   const navigate = useNavigate();
   const service = useMemo(() => getQ54Service(isDemo), [isDemo]);
-  const [topic, setTopic] = useState<Q54Topic | null>(null);
+  const [topics, setTopics] = useState<Q54Topic[]>([]);
   const [questions, setQuestions] = useState<Q54Question[]>([]);
   const [requirements, setRequirements] = useState<Q54Requirement[]>([]);
   const [promptKo, setPromptKo] = useState('');
@@ -22,7 +22,7 @@ export function Q54HubPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void service.getEnvironment().then((data) => { setTopic(data.topic); setQuestions(data.questions); setRequirements(data.requirements); }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'Không thể tải nội dung Q54.')).finally(() => setLoading(false));
+    void service.getCatalog().then((data) => { setTopics(data.topics); setQuestions(data.questions); setRequirements(data.requirements); }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'Không thể tải nội dung Q54.')).finally(() => setLoading(false));
   }, [service]);
 
   const analyze = async () => {
@@ -50,7 +50,8 @@ export function Q54HubPage() {
   };
 
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center gap-3 text-slate-500"><Loader2 className="w-6 h-6 animate-spin" />Đang chuẩn bị Q54...</div>;
-  if (!topic) return <div className="max-w-xl mx-auto px-4 py-14 text-center"><AlertCircle className="w-10 h-10 text-rose-600 mx-auto" /><p className="mt-4 text-sm text-slate-600">{error || 'Chưa có dữ liệu Q54.'}</p></div>;
+  if (!topics.length) return <div className="max-w-xl mx-auto px-4 py-14 text-center"><AlertCircle className="w-10 h-10 text-rose-600 mx-auto" /><p className="mt-4 text-sm text-slate-600">{error || 'Chưa có dữ liệu Q54.'}</p></div>;
+  const topicById = new Map(topics.map((item) => [item.id, item]));
 
   return <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 animate-fadeIn">
     <Link to="/topik/reading/1-4" className="text-sm font-semibold text-slate-500 hover:text-slate-900">← TOPIK</Link>
@@ -61,9 +62,9 @@ export function Q54HubPage() {
 
     {error && <div className="mt-6 flex items-start gap-3 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"><AlertCircle className="w-5 h-5 shrink-0" /><span>{error}</span></div>}
 
-    <section className="mt-8 border-y border-slate-200 py-6"><p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Topic hiện có</p><div className="mt-2 flex items-center gap-3"><span lang="ko" className="text-2xl font-extrabold text-slate-900">{topic.name_ko}</span><span className="text-sm text-slate-500">{topic.name_vi}</span></div><p className="mt-2 text-sm text-slate-600">{topic.description_vi}</p></section>
+    <section className="mt-8 border-y border-slate-200 py-6"><p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Content Bank hiện có</p><div className="mt-3 flex flex-wrap gap-3">{topics.map((item) => <div key={item.id} className="border border-slate-200 bg-white px-4 py-3 rounded-lg"><p lang="ko" className="font-bold text-slate-900">{item.name_ko}</p><p className="mt-1 text-sm text-slate-500">{item.name_vi}</p></div>)}</div></section>
 
-    <section className="mt-8"><div className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-brand-600" /><h2 className="text-lg font-bold">Bắt đầu với đề đã biên soạn</h2></div><div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">{questions.map((question) => <Link key={question.id} to={`/topik/writing/54/questions/${question.id}`} className="group border border-slate-200 bg-white p-5 rounded-lg hover:border-brand-400 hover:shadow-sm transition-all"><p lang="ko" className="font-bold leading-7 text-slate-900">{question.prompt_ko}</p><div className="mt-5 flex flex-wrap gap-2">{requirements.filter((item) => item.question_id === question.id).map((item) => <span key={item.id} className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"><span lang="ko" className="text-emerald-800">{item.requirement_type}</span><span className="text-slate-400">·</span><span>{item.function_group}</span></span>)}</div><span className="mt-5 inline-flex items-center gap-1 text-sm font-bold text-brand-700">Phân tích đề <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" /></span></Link>)}</div></section>
+    <section className="mt-8"><div className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-brand-600" /><h2 className="text-lg font-bold">Bắt đầu với đề đã biên soạn</h2></div><div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">{questions.map((question) => <Link key={question.id} to={`/topik/writing/54/questions/${question.id}`} className="group border border-slate-200 bg-white p-5 rounded-lg hover:border-brand-400 hover:shadow-sm transition-all"><p className="text-xs font-bold text-emerald-700">{topicById.get(question.topic_id || '')?.name_vi || 'Q54'}</p><p lang="ko" className="mt-2 font-bold leading-7 text-slate-900">{question.prompt_ko}</p><div className="mt-5 flex flex-wrap gap-2">{requirements.filter((item) => item.question_id === question.id).map((item) => <span key={item.id} className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"><span lang="ko" className="text-emerald-800">{item.requirement_type}</span><span className="text-slate-400">·</span><span>{item.function_group}</span></span>)}</div><span className="mt-5 inline-flex items-center gap-1 text-sm font-bold text-brand-700">Phân tích đề <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" /></span></Link>)}</div></section>
 
     <section className="mt-10 border-t border-slate-200 pt-8"><div className="flex items-center gap-2"><ScanText className="w-5 h-5 text-indigo-600" /><h2 className="text-lg font-bold">Phân tích đề mới</h2></div><p className="mt-1 text-sm text-slate-500">AI chỉ tách yêu cầu. Bạn kiểm tra và chỉnh lại trước khi lưu.</p><textarea value={promptKo} onChange={(event) => setPromptKo(event.target.value)} placeholder="Dán đề Q54 bằng tiếng Hàn..." className="mt-4 min-h-32 w-full resize-y rounded-lg border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
       <button type="button" disabled={!promptKo.trim() || analyzing} onClick={() => void analyze()} className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-brand-600 disabled:bg-slate-300 text-white text-sm font-semibold"><Sparkles className="w-4 h-4" />{analyzing ? 'Đang phân tích...' : 'Phân tích yêu cầu'}</button>

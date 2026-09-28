@@ -22,7 +22,7 @@ function asExercise(value: unknown): Q54Exercise {
 }
 
 export interface Q54Service {
-  getEnvironment(): Promise<{ topic: Q54Topic; questions: Q54Question[]; requirements: Q54Requirement[] }>;
+  getCatalog(): Promise<{ topics: Q54Topic[]; questions: Q54Question[]; requirements: Q54Requirement[] }>;
   getQuestionBundle(questionId: string): Promise<Q54QuestionBundle>;
   getExercise(exerciseId: string): Promise<Q54Exercise>;
   createManualExercise(input: { questionId: string; requirementId: string; promptVi: string }): Promise<Q54Exercise>;
@@ -46,7 +46,12 @@ function demoBundle(question: Q54Question, requirements: Q54Requirement[], topic
 
 function demoService(): Q54Service {
   return {
-    async getEnvironment() { const questions = [environmentQuestion, ...read<Q54Question[]>(demoQuestionsKey, [])]; const requirements = [...environmentRequirements, ...read<Q54Requirement[]>(`${demoQuestionsKey}:requirements`, [])]; return { topic: environmentTopic, questions, requirements }; },
+    async getCatalog() {
+      const topics = [environmentTopic, ...read<Q54Topic[]>(demoTopicsKey, [])];
+      const questions = [environmentQuestion, ...read<Q54Question[]>(demoQuestionsKey, [])];
+      const requirements = [...environmentRequirements, ...read<Q54Requirement[]>(`${demoQuestionsKey}:requirements`, [])];
+      return { topics, questions, requirements };
+    },
     async getQuestionBundle(questionId) {
       if (questionId === environmentQuestion.id) return environmentBundle;
       const question = read<Q54Question[]>(demoQuestionsKey, []).find((item) => item.id === questionId);
@@ -85,40 +90,46 @@ function demoService(): Q54Service {
 
 function liveService(): Q54Service {
   return {
-    async getEnvironment() {
-      const { data: topic, error: topicError } = await supabase.from('q54_topics').select('*').eq('slug', 'environment').single();
+    async getCatalog() {
+      const { data: topics, error: topicError } = await supabase.from('q54_topics').select('*').order('name_ko');
       if (topicError) throw topicError;
-      const { data: questions, error: questionError } = await supabase.from('q54_questions').select('*').eq('topic_id', topic.id).order('created_at');
+      const topicIds = (topics || []).map((item: { id: string }) => item.id);
+      const { data: questions, error: questionError } = topicIds.length
+        ? await supabase.from('q54_questions').select('*').in('topic_id', topicIds).order('created_at')
+        : { data: [], error: null };
       if (questionError) throw questionError;
       const ids = (questions || []).map((item: { id: string }) => item.id);
       const { data: requirements, error: requirementError } = ids.length ? await supabase.from('q54_question_requirements').select('*').in('question_id', ids).order('order_index') : { data: [], error: null };
       if (requirementError) throw requirementError;
-      return { topic: topic as Q54Topic, questions: (questions || []) as Q54Question[], requirements: (requirements || []) as Q54Requirement[] };
+      return { topics: (topics || []) as Q54Topic[], questions: (questions || []) as Q54Question[], requirements: (requirements || []) as Q54Requirement[] };
     },
     async getQuestionBundle(questionId) {
       const { data: question, error: questionError } = await supabase.from('q54_questions').select('*').eq('id', questionId).single();
       if (questionError) throw questionError;
       if (!question.topic_id) throw new Error('Đề này chưa có topic.');
-      const [{ data: topic, error: topicError }, { data: requirements, error: requirementError }, { data: patterns, error: patternError }, { data: examples, error: exampleError }, { data: links, error: linkError }, { data: allCollocations, error: collocationError }] = await Promise.all([
+      const [{ data: topic, error: topicError }, { data: requirements, error: requirementError }, { data: patterns, error: patternError }, { data: examples, error: exampleError }, { data: links, error: linkError }, { data: allCollocations, error: collocationError }, { data: patternLinks, error: patternLinkError }] = await Promise.all([
         supabase.from('q54_topics').select('*').eq('id', question.topic_id).single(),
         supabase.from('q54_question_requirements').select('*').eq('question_id', questionId).order('order_index'),
         supabase.from('q54_sentence_patterns').select('*').order('reuse_score', { ascending: false }),
         supabase.from('q54_pattern_examples').select('*').eq('topic_id', question.topic_id),
         supabase.from('q54_collocation_topics').select('collocation_id, topic_id'),
         supabase.from('q54_collocations').select('*').order('reuse_score', { ascending: false }),
+        supabase.from('q54_topic_pattern_mappings').select('pattern_id').eq('topic_id', question.topic_id),
       ]);
-      const error = topicError || requirementError || patternError || exampleError || linkError || collocationError;
+      const error = topicError || requirementError || patternError || exampleError || linkError || collocationError || patternLinkError;
       if (error) throw error;
       const requirementIds = (requirements || []).map((item: { id: string }) => item.id);
       const scopedCollocationIds = new Set((links || []).map((item: { collocation_id: string }) => item.collocation_id));
       const exactCollocationIds = new Set((links || []).filter((item: { topic_id: string }) => item.topic_id === question.topic_id).map((item: { collocation_id: string }) => item.collocation_id));
+      const mappedPatternIds = new Set((patternLinks || []).map((item: { pattern_id: string }) => item.pattern_id));
       const [{ data: ideas, error: ideaError }, { data: exercises, error: exerciseError }] = await Promise.all([
         supabase.from('q54_ideas').select('*').eq('topic_id', question.topic_id),
         requirementIds.length ? supabase.from('q54_translation_exercises').select(exerciseSelect).in('requirement_id', requirementIds).order('created_at', { ascending: false }) : Promise.resolve({ data: [], error: null }),
       ]);
       if (ideaError || exerciseError) throw ideaError || exerciseError;
       const collocations = (allCollocations || []) as Q54Collocation[];
-      return { topic: topic as Q54Topic, question: question as Q54Question, requirements: (requirements || []) as Q54Requirement[], ideas: (ideas || []) as Q54Idea[], collocations: collocations.filter((item) => exactCollocationIds.has(item.id)), globalCollocations: collocations.filter((item) => !scopedCollocationIds.has(item.id)), patterns: (patterns || []) as Q54Pattern[], examples: (examples || []) as Q54PatternExample[], exercises: (exercises || []).map(asExercise) };
+      const availablePatterns = (patterns || []) as Q54Pattern[];
+      return { topic: topic as Q54Topic, question: question as Q54Question, requirements: (requirements || []) as Q54Requirement[], ideas: (ideas || []) as Q54Idea[], collocations: collocations.filter((item) => exactCollocationIds.has(item.id)), globalCollocations: collocations.filter((item) => !scopedCollocationIds.has(item.id)), patterns: mappedPatternIds.size ? availablePatterns.filter((item) => mappedPatternIds.has(item.id)) : availablePatterns, examples: (examples || []) as Q54PatternExample[], exercises: (exercises || []).map(asExercise) };
     },
     async getExercise(exerciseId) { const { data, error } = await supabase.from('q54_translation_exercises').select(exerciseSelect).eq('id', exerciseId).single(); if (error) throw error; return asExercise(data); },
     async createManualExercise(input) {
