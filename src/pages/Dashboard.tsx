@@ -98,6 +98,15 @@ export const Dashboard: React.FC = () => {
         <span className="text-sm font-semibold text-brand-700">Mở TOPIK →</span>
       </Link>
 
+      <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Link to="/topik/reading/20" className="flex items-center justify-between gap-4 rounded-xl border border-indigo-200 bg-white px-5 py-4 shadow-sm hover:border-indigo-400 hover:shadow-md transition-all">
+          <div className="flex items-center gap-4"><span className="h-11 w-11 shrink-0 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center"><BookOpen className="w-5 h-5" /></span><div><p className="text-xs font-bold uppercase tracking-wider text-indigo-700">TOPIK II · Reading</p><h2 className="mt-0.5 text-lg font-bold text-slate-900">Luyện câu 20</h2><p className="mt-1 text-sm text-slate-500">Tìm chủ đề và nội dung trọng tâm của đoạn.</p></div></div><span className="text-sm font-semibold text-indigo-700">Mở →</span>
+        </Link>
+        <Link to="/topik/reading/21" className="flex items-center justify-between gap-4 rounded-xl border border-rose-200 bg-white px-5 py-4 shadow-sm hover:border-rose-400 hover:shadow-md transition-all">
+          <div className="flex items-center gap-4"><span className="h-11 w-11 shrink-0 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center"><Languages className="w-5 h-5" /></span><div><p className="text-xs font-bold uppercase tracking-wider text-rose-700">TOPIK II · Reading</p><h2 className="mt-0.5 text-lg font-bold text-slate-900">Luyện câu 21</h2><p className="mt-1 text-sm text-slate-500">관용 표현 theo bộ phận cơ thể và ngữ cảnh.</p></div></div><span className="text-sm font-semibold text-rose-700">Mở →</span>
+        </Link>
+      </div>
+
       <Link
         to="/topik/writing/54"
         className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border border-emerald-200 bg-white px-5 py-4 shadow-sm hover:border-emerald-400 hover:shadow-md transition-all"

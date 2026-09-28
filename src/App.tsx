@@ -33,6 +33,11 @@ import { Writing51PracticePage } from './features/topikWriting5152/pages/Writing
 import { Writing52HubPage } from './features/topikWriting5152/pages/Writing52HubPage';
 import { Writing52LearnPage } from './features/topikWriting5152/pages/Writing52LearnPage';
 import { Writing52PracticePage } from './features/topikWriting5152/pages/Writing52PracticePage';
+import { Reading20HubPage } from './features/topikReading2021/pages/Reading20HubPage';
+import { Reading20PracticePage } from './features/topikReading2021/pages/Reading20PracticePage';
+import { Reading21HubPage } from './features/topikReading2021/pages/Reading21HubPage';
+import { Reading21IdiomBankPage } from './features/topikReading2021/pages/Reading21IdiomBankPage';
+import { Reading21PracticePage } from './features/topikReading2021/pages/Reading21PracticePage';
 
 export const App: React.FC = () => {
   return (
@@ -108,6 +113,13 @@ export const App: React.FC = () => {
               <Route path="/topik/reading/1-4/similar" element={<ProtectedRoute><TopikSimilarPage /></ProtectedRoute>} />
               <Route path="/topik/reading/1-4/practice" element={<ProtectedRoute><TopikPracticePage /></ProtectedRoute>} />
               <Route path="/topik/reading/1-4/wrong" element={<ProtectedRoute><TopikWrongPage /></ProtectedRoute>} />
+              <Route path="/topik/reading/20" element={<ProtectedRoute><Reading20HubPage /></ProtectedRoute>} />
+              <Route path="/topik/reading/20/practice" element={<Navigate to="/topik/reading/20" replace />} />
+              <Route path="/topik/reading/20/practice/:id" element={<ProtectedRoute><Reading20PracticePage /></ProtectedRoute>} />
+              <Route path="/topik/reading/21" element={<ProtectedRoute><Reading21HubPage /></ProtectedRoute>} />
+              <Route path="/topik/reading/21/idioms" element={<ProtectedRoute><Reading21IdiomBankPage /></ProtectedRoute>} />
+              <Route path="/topik/reading/21/practice" element={<Navigate to="/topik/reading/21" replace />} />
+              <Route path="/topik/reading/21/practice/:id" element={<ProtectedRoute><Reading21PracticePage /></ProtectedRoute>} />
               <Route path="/topik/reader" element={<ProtectedRoute><PassageListPage /></ProtectedRoute>} />
               <Route path="/topik/reader/new" element={<ProtectedRoute><PassageFormPage /></ProtectedRoute>} />
               <Route path="/topik/reader/:id" element={<ProtectedRoute><InteractiveReaderPage /></ProtectedRoute>} />
