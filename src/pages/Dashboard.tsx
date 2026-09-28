@@ -5,7 +5,7 @@ import { studySetService } from '../services/studySetService';
 import type { StudySet } from '../types';
 import { StudySetCard } from '../components/StudySetCard';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { Plus, Search, BookOpen, AlertCircle, Languages, PenLine } from 'lucide-react';
+import { Plus, Search, BookOpen, AlertCircle, Languages, PenLine, MessageSquareText, TextQuote } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { user, isDemo } = useAuth();
@@ -114,6 +114,15 @@ export const Dashboard: React.FC = () => {
         </div>
         <span className="text-sm font-semibold text-emerald-700">Mở Writing →</span>
       </Link>
+
+      <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Link to="/topik/writing/51" className="flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-white px-5 py-4 shadow-sm hover:border-amber-400 hover:shadow-md transition-all">
+          <div className="flex items-center gap-4"><span className="h-11 w-11 shrink-0 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center"><MessageSquareText className="w-5 h-5" /></span><div><p className="text-xs font-bold uppercase tracking-wider text-amber-700">TOPIK II · Writing</p><h2 className="mt-0.5 text-lg font-bold text-slate-900">Luyện câu 51</h2><p className="mt-1 text-sm text-slate-500">Nhận diện tình huống, intent và công thức phù hợp.</p></div></div><span className="text-sm font-semibold text-amber-700">Mở →</span>
+        </Link>
+        <Link to="/topik/writing/52" className="flex items-center justify-between gap-4 rounded-xl border border-sky-200 bg-white px-5 py-4 shadow-sm hover:border-sky-400 hover:shadow-md transition-all">
+          <div className="flex items-center gap-4"><span className="h-11 w-11 shrink-0 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center"><TextQuote className="w-5 h-5" /></span><div><p className="text-xs font-bold uppercase tracking-wider text-sky-700">TOPIK II · Writing</p><h2 className="mt-0.5 text-lg font-bold text-slate-900">Luyện câu 52</h2><p className="mt-1 text-sm text-slate-500">Đọc đoạn văn, tìm relation logic và hoàn thiện câu.</p></div></div><span className="text-sm font-semibold text-sky-700">Mở →</span>
+        </Link>
+      </div>
 
       {/* Search & Filter Bar */}
       <div className="relative mb-8">

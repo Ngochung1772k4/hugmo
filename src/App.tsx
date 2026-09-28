@@ -27,6 +27,12 @@ import { Q54HubPage } from './features/topikWriting54/pages/Q54HubPage';
 import { Q54QuestionPage } from './features/topikWriting54/pages/Q54QuestionPage';
 import { Q54PracticePage } from './features/topikWriting54/pages/Q54PracticePage';
 import { Q54ErrorNotebookPage } from './features/topikWriting54/pages/Q54ErrorNotebookPage';
+import { Writing51HubPage } from './features/topikWriting5152/pages/Writing51HubPage';
+import { Writing51LearnPage } from './features/topikWriting5152/pages/Writing51LearnPage';
+import { Writing51PracticePage } from './features/topikWriting5152/pages/Writing51PracticePage';
+import { Writing52HubPage } from './features/topikWriting5152/pages/Writing52HubPage';
+import { Writing52LearnPage } from './features/topikWriting5152/pages/Writing52LearnPage';
+import { Writing52PracticePage } from './features/topikWriting5152/pages/Writing52PracticePage';
 
 export const App: React.FC = () => {
   return (
@@ -111,6 +117,14 @@ export const App: React.FC = () => {
               <Route path="/topik/writing/54/questions/:id" element={<ProtectedRoute><Q54QuestionPage /></ProtectedRoute>} />
               <Route path="/topik/writing/54/practice/:id" element={<ProtectedRoute><Q54PracticePage /></ProtectedRoute>} />
               <Route path="/topik/writing/54/errors" element={<ProtectedRoute><Q54ErrorNotebookPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/51" element={<ProtectedRoute><Writing51HubPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/51/learn" element={<ProtectedRoute><Writing51LearnPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/51/practice" element={<Navigate to="/topik/writing/51" replace />} />
+              <Route path="/topik/writing/51/practice/:id" element={<ProtectedRoute><Writing51PracticePage /></ProtectedRoute>} />
+              <Route path="/topik/writing/52" element={<ProtectedRoute><Writing52HubPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/52/learn" element={<ProtectedRoute><Writing52LearnPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/52/practice" element={<Navigate to="/topik/writing/52" replace />} />
+              <Route path="/topik/writing/52/practice/:id" element={<ProtectedRoute><Writing52PracticePage /></ProtectedRoute>} />
 
               {/* Redirections */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
