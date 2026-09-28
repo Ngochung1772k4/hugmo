@@ -23,6 +23,10 @@ import { PassageListPage } from './features/topikReader/pages/PassageListPage';
 import { PassageFormPage } from './features/topikReader/pages/PassageFormPage';
 import { InteractiveReaderPage } from './features/topikReader/pages/InteractiveReaderPage';
 import { PassageVocabularyPage } from './features/topikReader/pages/PassageVocabularyPage';
+import { Q54HubPage } from './features/topikWriting54/pages/Q54HubPage';
+import { Q54QuestionPage } from './features/topikWriting54/pages/Q54QuestionPage';
+import { Q54PracticePage } from './features/topikWriting54/pages/Q54PracticePage';
+import { Q54ErrorNotebookPage } from './features/topikWriting54/pages/Q54ErrorNotebookPage';
 
 export const App: React.FC = () => {
   return (
@@ -103,6 +107,10 @@ export const App: React.FC = () => {
               <Route path="/topik/reader/:id" element={<ProtectedRoute><InteractiveReaderPage /></ProtectedRoute>} />
               <Route path="/topik/reader/:id/edit" element={<ProtectedRoute><PassageFormPage /></ProtectedRoute>} />
               <Route path="/topik/reader/:id/vocabulary" element={<ProtectedRoute><PassageVocabularyPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54" element={<ProtectedRoute><Q54HubPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54/questions/:id" element={<ProtectedRoute><Q54QuestionPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54/practice/:id" element={<ProtectedRoute><Q54PracticePage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54/errors" element={<ProtectedRoute><Q54ErrorNotebookPage /></ProtectedRoute>} />
 
               {/* Redirections */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

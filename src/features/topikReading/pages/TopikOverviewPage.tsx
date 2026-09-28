@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, BookOpen, Brain, Clock3, ListX, Loader2, Sparkles, ScanText } from 'lucide-react';
+import { AlertCircle, BookOpen, Brain, Clock3, ListX, Loader2, Sparkles, ScanText, PenLine } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getTopikReadingService } from '../service';
 import { getProgress } from '../utils';
 import type { TopikOverviewProgress } from '../types';
 
 const activities = [
+  { to: '/topik/writing/54', title: 'TOPIK Writing câu 54', copy: 'Tách yêu cầu đề, xây ý và luyện câu Việt → Hàn.', icon: PenLine, tone: 'text-emerald-700 bg-emerald-50' },
   { to: '/topik/reader', title: 'Interactive Reader', copy: 'Đọc bài, bôi chọn từ và lưu thẻ theo ngữ cảnh.', icon: ScanText, tone: 'text-teal-700 bg-teal-50' },
   { to: '/topik/reading/1-4/grammar', title: 'Học ngữ pháp', copy: 'Công thức, cách dùng và ví dụ.', icon: BookOpen, tone: 'text-brand-700 bg-brand-50' },
   { to: '/topik/reading/1-4/practice?mode=fill', title: 'Luyện câu 1-2', copy: 'Chọn cấu trúc phù hợp cho chỗ trống.', icon: Brain, tone: 'text-indigo-700 bg-indigo-50' },

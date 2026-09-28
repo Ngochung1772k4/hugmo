@@ -5,7 +5,7 @@ import { studySetService } from '../services/studySetService';
 import type { StudySet } from '../types';
 import { StudySetCard } from '../components/StudySetCard';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { Plus, Search, BookOpen, AlertCircle, Languages } from 'lucide-react';
+import { Plus, Search, BookOpen, AlertCircle, Languages, PenLine } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { user, isDemo } = useAuth();
@@ -96,6 +96,23 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
         <span className="text-sm font-semibold text-brand-700">Mở TOPIK →</span>
+      </Link>
+
+      <Link
+        to="/topik/writing/54"
+        className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border border-emerald-200 bg-white px-5 py-4 shadow-sm hover:border-emerald-400 hover:shadow-md transition-all"
+      >
+        <div className="flex items-center gap-4">
+          <span className="h-11 w-11 shrink-0 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+            <PenLine className="w-5 h-5" />
+          </span>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">TOPIK II · Writing</p>
+            <h2 className="mt-0.5 text-lg font-bold text-slate-900">Luyện câu 54</h2>
+            <p className="mt-1 text-sm text-slate-500">Phân tích đề, idea, collocation và luyện viết câu theo từng gợi ý.</p>
+          </div>
+        </div>
+        <span className="text-sm font-semibold text-emerald-700">Mở Writing →</span>
       </Link>
 
       {/* Search & Filter Bar */}
