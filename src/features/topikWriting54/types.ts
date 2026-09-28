@@ -38,7 +38,9 @@ export interface Q54Idea { id: string; topic_id: string; requirement_id: string 
 export interface Q54Collocation { id: string; expression_ko: string; meaning_vi: string; reuse_score: number; function_group: Q54FunctionGroup | null; }
 export interface Q54Pattern { id: string; function_group: Q54FunctionGroup; pattern_ko: string; meaning_vi: string; difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'; reuse_score: number; }
 export interface Q54PatternExample { id: string; pattern_id: string; topic_id: string | null; sentence_ko: string; translation_vi: string; }
-export interface Q54Exercise { id: string; topic_id: string; requirement_id: string; prompt_vi: string; reference_answer_ko: string; vocabulary_hint: string[]; pattern_hint: string | null; sample_sentence_ko: string | null; }
+export type Q54HintKey = 'vocabulary' | 'pattern' | 'logic' | 'sample';
+export interface Q54ExerciseHints { vocabulary?: string[]; pattern?: string; logic?: string; sample?: string; }
+export interface Q54Exercise { id: string; topic_id: string; requirement_id: string; prompt_vi: string; reference_answer_ko: string | null; vocabulary_hint: string[]; pattern_hint: string | null; sample_sentence_ko: string | null; created_by?: string | null; visibility?: 'PUBLIC' | 'PRIVATE'; generation_mode?: 'CURATED' | 'AI_GENERATED' | 'USER_ENTERED'; difficulty?: 'NORMAL'; generation_context_json?: Record<string, unknown>; hint_cache?: Q54ExerciseHints; created_at?: string; }
 export interface Q54QuestionBundle { topic: Q54Topic; question: Q54Question; requirements: Q54Requirement[]; ideas: Q54Idea[]; collocations: Q54Collocation[]; globalCollocations: Q54Collocation[]; patterns: Q54Pattern[]; examples: Q54PatternExample[]; exercises: Q54Exercise[]; }
 export interface Q54TopicSuggestion { kind: 'EXISTING' | 'OTHER'; slug: string; nameKo: string; nameVi: string; subtopicKo: string | null; }
 export interface Q54QuestionAnalysis { requirements: Array<{ promptKo: string; labelVi: string; requirementType: Q54RequirementType; functionGroup: Q54FunctionGroup }>; topicSuggestion: Q54TopicSuggestion | null; }

@@ -34,6 +34,7 @@ Chạy file migration rồi seed trong Supabase SQL Editor, theo thứ tự:
 2. `migrations/20260928000006_q54_requirement_types.sql`
 3. `seed/topik_writing_q54_environment_seed.sql`
 4. `migrations/20260928000007_q54_custom_topics_and_global_banks.sql`
+5. `migrations/20260928000008_q54_translation_workbench.sql`
 
 Sau đó deploy hai Edge Function (cùng project Supabase đang dùng):
 
@@ -41,6 +42,8 @@ Sau đó deploy hai Edge Function (cùng project Supabase đang dùng):
 npx supabase functions deploy analyze-q54-question --project-ref vkqhspfcavyppboksrym
 npx supabase functions deploy check-q54-sentence --project-ref vkqhspfcavyppboksrym
 npx supabase functions deploy generate-q54-ideas --project-ref vkqhspfcavyppboksrym
+npx supabase functions deploy generate-q54-translation-exercise --project-ref vkqhspfcavyppboksrym
+npx supabase functions deploy generate-q54-translation-hint --project-ref vkqhspfcavyppboksrym
 ```
 
 Migration `00007` cho phép một đề ngoài taxonomy seed được lưu thành topic `PRIVATE` của chính người dùng, lưu `subtopic_ko`, và bổ sung Global Bank theo functional group. Nó không lấy Bank từ một topic khác.

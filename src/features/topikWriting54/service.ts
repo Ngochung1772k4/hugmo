@@ -5,6 +5,7 @@ import type { Q54Collocation, Q54Exercise, Q54Idea, Q54Pattern, Q54PatternExampl
 const demoQuestionsKey = 'hugmo_q54_demo_questions';
 const demoTopicsKey = 'hugmo_q54_demo_topics';
 const demoErrorsKey = 'hugmo_q54_demo_errors';
+const demoExercisesKey = 'hugmo_q54_demo_exercises';
 
 function read<T>(key: string, fallback: T): T { try { return JSON.parse(localStorage.getItem(key) || '') as T; } catch { return fallback; } }
 function write(key: string, value: unknown) { localStorage.setItem(key, JSON.stringify(value)); }
@@ -14,11 +15,17 @@ function saveQuestionError(error: { message?: string }) {
   }
   return error;
 }
+const exerciseSelect = 'id, topic_id, requirement_id, prompt_vi, vocabulary_hint, pattern_hint, sample_sentence_ko, created_by, visibility, generation_mode, difficulty, generation_context_json, hint_cache, created_at';
+function asExercise(value: unknown): Q54Exercise {
+  const raw = value as Q54Exercise;
+  return { ...raw, reference_answer_ko: raw.reference_answer_ko || null, vocabulary_hint: Array.isArray(raw.vocabulary_hint) ? raw.vocabulary_hint : [], hint_cache: raw.hint_cache && typeof raw.hint_cache === 'object' ? raw.hint_cache : {} };
+}
 
 export interface Q54Service {
   getEnvironment(): Promise<{ topic: Q54Topic; questions: Q54Question[]; requirements: Q54Requirement[] }>;
   getQuestionBundle(questionId: string): Promise<Q54QuestionBundle>;
   getExercise(exerciseId: string): Promise<Q54Exercise>;
+  createManualExercise(input: { questionId: string; requirementId: string; promptVi: string }): Promise<Q54Exercise>;
   savePrivateQuestion(input: { topic: Q54TopicSuggestion; promptKo: string; requirements: Array<{ promptKo: string; labelVi: string; requirementType: Q54RequirementType; functionGroup: Q54Requirement['function_group'] }> }): Promise<Q54Question>;
   getErrors(userId: string): Promise<Q54UserError[]>;
 }
@@ -32,9 +39,9 @@ const globalDemoCollocations: Q54Collocation[] = [
   { id: 'global-solution-strengthen', expression_ko: '~을 강화하다', meaning_vi: 'tăng cường ~', reuse_score: 4, function_group: 'SOLUTION' },
 ];
 
-function demoBundle(question: Q54Question, requirements: Q54Requirement[], topic: Q54Topic): Q54QuestionBundle {
+function demoBundle(question: Q54Question, requirements: Q54Requirement[], topic: Q54Topic, exercises: Q54Exercise[]): Q54QuestionBundle {
   if (question.id === environmentQuestion.id) return environmentBundle;
-  return { topic, question, requirements, ideas: [], collocations: [], globalCollocations: globalDemoCollocations, patterns: environmentBundle.patterns, examples: [], exercises: [] };
+  return { topic, question, requirements, ideas: [], collocations: [], globalCollocations: globalDemoCollocations, patterns: environmentBundle.patterns, examples: [], exercises };
 }
 
 function demoService(): Q54Service {
@@ -46,9 +53,19 @@ function demoService(): Q54Service {
       if (!question) throw new Error('Không tìm thấy đề Q54.');
       const topic = [...read<Q54Topic[]>(demoTopicsKey, []), environmentTopic].find((item) => item.id === question.topic_id);
       if (!topic) throw new Error('Không tìm thấy topic của đề Q54.');
-      return demoBundle(question, read<Q54Requirement[]>(`${demoQuestionsKey}:requirements`, []).filter((item) => item.question_id === questionId), topic);
+      const requirements = read<Q54Requirement[]>(`${demoQuestionsKey}:requirements`, []).filter((item) => item.question_id === questionId);
+      return demoBundle(question, requirements, topic, read<Q54Exercise[]>(demoExercisesKey, []).filter((item) => requirements.some((requirement) => requirement.id === item.requirement_id)));
     },
-    async getExercise(exerciseId) { const exercise = environmentBundle.exercises.find((item) => item.id === exerciseId); if (!exercise) throw new Error('Không tìm thấy bài dịch.'); return exercise; },
+    async getExercise(exerciseId) { const exercise = environmentBundle.exercises.find((item) => item.id === exerciseId) || read<Q54Exercise[]>(demoExercisesKey, []).find((item) => item.id === exerciseId); if (!exercise) throw new Error('Không tìm thấy bài dịch.'); return asExercise(exercise); },
+    async createManualExercise(input) {
+      const requirements = [...environmentRequirements, ...read<Q54Requirement[]>(`${demoQuestionsKey}:requirements`, [])];
+      const requirement = requirements.find((item) => item.id === input.requirementId && item.question_id === input.questionId);
+      const question = input.questionId === environmentQuestion.id ? environmentQuestion : read<Q54Question[]>(demoQuestionsKey, []).find((item) => item.id === input.questionId);
+      if (!requirement || !question || !input.promptVi.trim() || input.promptVi.trim().length > 250) throw new Error('Câu tiếng Việt cần từ 1 đến 250 ký tự.');
+      const exercise: Q54Exercise = { id: `demo-q54-exercise-${crypto.randomUUID()}`, topic_id: question.topic_id || environmentTopic.id, requirement_id: requirement.id, prompt_vi: input.promptVi.trim(), reference_answer_ko: null, vocabulary_hint: [], pattern_hint: null, sample_sentence_ko: null, visibility: 'PRIVATE', generation_mode: 'USER_ENTERED', difficulty: 'NORMAL', generation_context_json: { questionKo: question.prompt_ko, requirementKo: requirement.prompt_ko, functionGroup: requirement.function_group, promptVi: input.promptVi.trim() }, hint_cache: {}, created_at: new Date().toISOString() };
+      write(demoExercisesKey, [...read<Q54Exercise[]>(demoExercisesKey, []), exercise]);
+      return exercise;
+    },
     async savePrivateQuestion(input) {
       const id = `demo-q54-${crypto.randomUUID()}`;
       const savedTopics = read<Q54Topic[]>(demoTopicsKey, []);
@@ -97,13 +114,18 @@ function liveService(): Q54Service {
       const exactCollocationIds = new Set((links || []).filter((item: { topic_id: string }) => item.topic_id === question.topic_id).map((item: { collocation_id: string }) => item.collocation_id));
       const [{ data: ideas, error: ideaError }, { data: exercises, error: exerciseError }] = await Promise.all([
         supabase.from('q54_ideas').select('*').eq('topic_id', question.topic_id),
-        requirementIds.length ? supabase.from('q54_translation_exercises').select('*').in('requirement_id', requirementIds).order('created_at') : Promise.resolve({ data: [], error: null }),
+        requirementIds.length ? supabase.from('q54_translation_exercises').select(exerciseSelect).in('requirement_id', requirementIds).order('created_at', { ascending: false }) : Promise.resolve({ data: [], error: null }),
       ]);
       if (ideaError || exerciseError) throw ideaError || exerciseError;
       const collocations = (allCollocations || []) as Q54Collocation[];
-      return { topic: topic as Q54Topic, question: question as Q54Question, requirements: (requirements || []) as Q54Requirement[], ideas: (ideas || []) as Q54Idea[], collocations: collocations.filter((item) => exactCollocationIds.has(item.id)), globalCollocations: collocations.filter((item) => !scopedCollocationIds.has(item.id)), patterns: (patterns || []) as Q54Pattern[], examples: (examples || []) as Q54PatternExample[], exercises: (exercises || []) as Q54Exercise[] };
+      return { topic: topic as Q54Topic, question: question as Q54Question, requirements: (requirements || []) as Q54Requirement[], ideas: (ideas || []) as Q54Idea[], collocations: collocations.filter((item) => exactCollocationIds.has(item.id)), globalCollocations: collocations.filter((item) => !scopedCollocationIds.has(item.id)), patterns: (patterns || []) as Q54Pattern[], examples: (examples || []) as Q54PatternExample[], exercises: (exercises || []).map(asExercise) };
     },
-    async getExercise(exerciseId) { const { data, error } = await supabase.from('q54_translation_exercises').select('*').eq('id', exerciseId).single(); if (error) throw error; return data as Q54Exercise; },
+    async getExercise(exerciseId) { const { data, error } = await supabase.from('q54_translation_exercises').select(exerciseSelect).eq('id', exerciseId).single(); if (error) throw error; return asExercise(data); },
+    async createManualExercise(input) {
+      const { data, error } = await supabase.rpc('create_q54_manual_translation_exercise', { p_question_id: input.questionId, p_requirement_id: input.requirementId, p_prompt_vi: input.promptVi });
+      if (error) throw error;
+      return asExercise(data);
+    },
     async savePrivateQuestion(input) {
       const { data, error } = await supabase.rpc('save_q54_private_question_with_topic', { p_topic_slug: input.topic.slug, p_topic_name_ko: input.topic.nameKo, p_topic_name_vi: input.topic.nameVi, p_subtopic_ko: input.topic.subtopicKo, p_prompt_ko: input.promptKo, p_requirements: input.requirements, p_source_type: 'AI_GENERATED' });
       if (error) throw saveQuestionError(error);

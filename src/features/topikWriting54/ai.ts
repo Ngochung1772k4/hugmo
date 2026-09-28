@@ -1,7 +1,7 @@
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import { environmentRequirements } from './data/demoFixture';
 import { saveDemoError } from './service';
-import type { Q54Assessment, Q54FunctionGroup, Q54GeneratedIdea, Q54QuestionAnalysis, Q54SentenceAttempt } from './types';
+import type { Q54Assessment, Q54FunctionGroup, Q54GeneratedIdea, Q54HintKey, Q54QuestionAnalysis, Q54SentenceAttempt } from './types';
 
 function errorMessage(error: unknown) { return error instanceof Error ? error.message : 'Không thể kết nối dịch vụ AI.'; }
 
@@ -56,14 +56,41 @@ export async function generateQ54Ideas(input: { questionId: string; requirementI
   throw new Error('AI chưa thể tạo Idea Bank cho requirement này. Hãy thử lại sau.');
 }
 
-function demoAssessment(answerKo: string, referenceAnswer: string): Q54Assessment {
-  const correct = answerKo.normalize('NFC').trim() === referenceAnswer.normalize('NFC').trim();
-  return correct
-    ? { verdict: 'ACCEPTABLE', summaryVi: 'Câu của bạn khớp với đáp án tham chiếu trong Demo Mode.', correctedSentence: referenceAnswer, errors: [], naturalAlternatives: [], usedPatterns: [], usedVocabulary: [] }
-    : { verdict: 'NEEDS_REVISION', summaryVi: 'Demo Mode chỉ so sánh với đáp án tham chiếu. Bản online sẽ nhận xét ngữ pháp, collocation và độ tự nhiên chi tiết hơn.', correctedSentence: referenceAnswer, errors: [{ type: 'GRAMMAR', original: answerKo, corrected: referenceAnswer, explanationVi: 'Hãy so sánh câu của bạn với cấu trúc gợi ý và đáp án tham chiếu.' }], naturalAlternatives: [], usedPatterns: [], usedVocabulary: [] };
+export async function generateQ54TranslationExercise(input: { questionId: string; requirementId: string; isDemo: boolean }): Promise<string> {
+  if (input.isDemo || !isSupabaseConfigured) throw new Error('Demo Mode chỉ hỗ trợ tự nhập câu tiếng Việt.');
+  const { data, error } = await supabase.functions.invoke('generate-q54-translation-exercise', { body: { questionId: input.questionId, requirementId: input.requirementId } });
+  if (error) throw new Error(error.message);
+  const result = data as { code?: string; exerciseId?: string };
+  if (result.exerciseId) return result.exerciseId;
+  if (result.code === 'Q54_RATE_LIMIT_SHORT') throw new Error('Bạn đã gửi quá nhiều yêu cầu AI Q54 trong vài phút. Hãy thử lại sau.');
+  if (result.code === 'Q54_RATE_LIMIT_DAILY') throw new Error('Bạn đã dùng hết lượt AI Q54 hôm nay.');
+  throw new Error('AI chưa thể tạo bài luyện lúc này. Hãy thử lại sau.');
 }
 
-export async function checkQ54Sentence(input: { exerciseId: string; answerKo: string; hintLevel: number; hintsUsed: string[]; referenceAnswer: string; submissionId: string; isDemo: boolean }): Promise<{ attemptId: string; state: Q54SentenceAttempt['state']; assessment: Q54Assessment | null }> {
+export async function generateQ54TranslationHint(input: { exerciseId: string; hintKey: Q54HintKey; isDemo: boolean }): Promise<string[] | string> {
+  if (input.isDemo || !isSupabaseConfigured) {
+    if (input.hintKey === 'vocabulary') return ['핵심 단어', '실천하다', '도움이 되다'];
+    if (input.hintKey === 'pattern') return 'V-는 데 도움이 되다';
+    if (input.hintKey === 'logic') return 'Chọn chủ thể rõ ràng rồi nối hành động với tác động hoặc mục tiêu.';
+    return '꾸준한 실천은 좋은 습관을 만드는 데 도움이 된다.';
+  }
+  const { data, error } = await supabase.functions.invoke('generate-q54-translation-hint', { body: { exerciseId: input.exerciseId, hintKey: input.hintKey } });
+  if (error) throw new Error(error.message);
+  const result = data as { code?: string; hint?: string[] | string };
+  if (result.hint) return result.hint;
+  if (result.code === 'Q54_RATE_LIMIT_SHORT') throw new Error('Bạn đã gửi quá nhiều yêu cầu AI Q54 trong vài phút. Hãy thử lại sau.');
+  if (result.code === 'Q54_RATE_LIMIT_DAILY') throw new Error('Bạn đã dùng hết lượt AI Q54 hôm nay.');
+  throw new Error('AI chưa thể tạo gợi ý này. Hãy thử lại sau.');
+}
+
+function demoAssessment(answerKo: string, referenceAnswer: string | null): Q54Assessment {
+  const correct = !!referenceAnswer && answerKo.normalize('NFC').trim() === referenceAnswer.normalize('NFC').trim();
+  return correct
+    ? { verdict: 'ACCEPTABLE', summaryVi: 'Câu của bạn khớp với đáp án tham chiếu trong Demo Mode.', correctedSentence: referenceAnswer || answerKo, errors: [], naturalAlternatives: [], usedPatterns: [], usedVocabulary: [] }
+    : { verdict: 'NEEDS_REVISION', summaryVi: 'Demo Mode chưa thể chấm chính xác câu tự nhập như bản online.', correctedSentence: referenceAnswer || answerKo, errors: referenceAnswer ? [{ type: 'GRAMMAR', original: answerKo, corrected: referenceAnswer, explanationVi: 'Hãy so sánh câu của bạn với cấu trúc gợi ý và đáp án tham chiếu.' }] : [], naturalAlternatives: [], usedPatterns: [], usedVocabulary: [] };
+}
+
+export async function checkQ54Sentence(input: { exerciseId: string; answerKo: string; hintLevel: number; hintsUsed: string[]; referenceAnswer: string | null; submissionId: string; isDemo: boolean }): Promise<{ attemptId: string; state: Q54SentenceAttempt['state']; assessment: Q54Assessment | null }> {
   if (input.isDemo || !isSupabaseConfigured) {
     const assessment = demoAssessment(input.answerKo, input.referenceAnswer);
     for (const error of assessment.errors) saveDemoError({ error_key: `${error.type}|${error.original.normalize('NFC').trim().toLowerCase()}|${error.corrected.normalize('NFC').trim().toLowerCase()}`, error_type: error.type, original_text: error.original, corrected_text: error.corrected, explanation_vi: error.explanationVi });
