@@ -1,4 +1,5 @@
 import seedSource from '../../../supabase/seed/sources/TOPIK_READING_20_21_SEED_DATA.json';
+import editorialGlosses from '../../../supabase/seed/TOPIK_READING_21_EDITORIAL_GLOSSES.json';
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import type { IdiomProgressStatus, Reading2021Attempt, Reading2021Exercise, ReadingIdiom, ReadingIdiomGroup, ReadingIdiomProgress, ReadingPairQuestion, TopikReading2021Service } from './types';
 
@@ -81,8 +82,9 @@ function updateDemoProgress(userId: string, idiomId: string | null, isCorrect: b
 function createDemoService(): TopikReading2021Service {
   const q20 = demoExercises('19_20');
   const q21 = demoExercises('21_22');
+  const editorialByExpression = new Map(editorialGlosses.glosses.map((item) => [item.expression_ko, item.meaning_vi_editorial]));
   const idioms = seedSource.q21.idioms.filter((item) => item.review_status !== 'NEEDS_REVIEW').map((item) => ({
-    id: item.expression_ko, expressionKo: item.expression_ko, meaningViSource: item.meaning_vi_source, memoryGroupCode: item.memory_group, bodyPart: item.body_part, coreVerb: item.core_verb, coreVerbViEditorial: item.core_verb_vi_editorial, priority: item.priority, reviewStatus: item.review_status, reviewNote: item.review_note, sourcePages: item.source_locations.map((location) => location.page),
+    id: item.expression_ko, expressionKo: item.expression_ko, meaningViSource: item.meaning_vi_source, meaningViEditorial: editorialByExpression.get(item.expression_ko) || null, memoryGroupCode: item.memory_group, bodyPart: item.body_part, coreVerb: item.core_verb, coreVerbViEditorial: item.core_verb_vi_editorial, priority: item.priority, reviewStatus: item.review_status, reviewNote: item.review_note, sourcePages: item.source_locations.map((location) => location.page),
   })) as ReadingIdiom[];
   return {
     async getIdiomGroups() { return seedSource.q21.memory_groups.map((item) => ({ id: item.code, code: item.code, nameKo: item.name_ko, nameVi: item.name_vi, sortOrder: item.sort_order })) as ReadingIdiomGroup[]; },
@@ -137,7 +139,9 @@ function createLiveService(): TopikReading2021Service {
     async getIdioms() {
       const [idiomsResult, locationsResult] = await Promise.all([supabase.from('topik_reading_idioms').select('*').order('priority').order('expression_ko'), supabase.from('topik_reading_source_locations').select('*').eq('entity_type', 'IDIOM').order('source_page')]);
       if (idiomsResult.error || locationsResult.error) throw idiomsResult.error || locationsResult.error;
-      return (idiomsResult.data || []).map((item: any) => ({ id: item.id, expressionKo: item.expression_ko, meaningViSource: item.meaning_vi_source, memoryGroupCode: item.memory_group_code, bodyPart: item.body_part, coreVerb: item.core_verb, coreVerbViEditorial: item.core_verb_vi_editorial, priority: item.priority, reviewStatus: item.review_status, reviewNote: item.review_note, sourcePages: (locationsResult.data || []).filter((location: any) => location.entity_id === item.id).map((location: any) => location.source_page) }));
+      const editorialResult = await supabase.from('topik_reading_idiom_editorial_glosses').select('*');
+      if (editorialResult.error && editorialResult.error.code !== '42P01') throw editorialResult.error;
+      return (idiomsResult.data || []).map((item: any) => ({ id: item.id, expressionKo: item.expression_ko, meaningViSource: item.meaning_vi_source, meaningViEditorial: (editorialResult.data || []).find((gloss: any) => gloss.idiom_id === item.id)?.meaning_vi_editorial || null, memoryGroupCode: item.memory_group_code, bodyPart: item.body_part, coreVerb: item.core_verb, coreVerbViEditorial: item.core_verb_vi_editorial, priority: item.priority, reviewStatus: item.review_status, reviewNote: item.review_note, sourcePages: (locationsResult.data || []).filter((location: any) => location.entity_id === item.id).map((location: any) => location.source_page) }));
     },
     async getQ20Exercises() {
       const [exercisesResult, questionsResult] = await Promise.all([supabase.from('topik_reading_20_21_exercises').select('*').order('source_page'), supabase.from('topik_reading_mc_questions').select('*').order('question_no')]);

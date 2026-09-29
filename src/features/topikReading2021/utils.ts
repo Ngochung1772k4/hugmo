@@ -9,6 +9,8 @@ export function repeatedCoreTerms(passageKo: string) {
   return [...counts.entries()].filter(([, count]) => count > 1).sort((left, right) => right[1] - left[1]).slice(0, 6).map(([term]) => term);
 }
 
-export function sourceMeaningOrFallback(meaning: string | null) {
-  return meaning || 'Chưa có nghĩa Việt được chú giải trong nguồn seed.';
+export function idiomMeaning(item: { meaningViSource: string | null; meaningViEditorial: string | null }) {
+  if (item.meaningViSource) return { label: 'Nghĩa sách', value: item.meaningViSource };
+  if (item.meaningViEditorial) return { label: 'Giải nghĩa bổ sung', value: item.meaningViEditorial };
+  return { label: 'Nghĩa sách', value: 'Chưa có nghĩa Việt được chú giải trong nguồn seed.' };
 }

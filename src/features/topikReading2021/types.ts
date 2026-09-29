@@ -28,6 +28,7 @@ export interface ReadingIdiom {
   id: string;
   expressionKo: string;
   meaningViSource: string | null;
+  meaningViEditorial: string | null;
   memoryGroupCode: IdiomMemoryGroup;
   bodyPart: string | null;
   coreVerb: string | null;

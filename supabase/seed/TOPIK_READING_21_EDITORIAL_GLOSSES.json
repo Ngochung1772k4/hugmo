@@ -1,0 +1,20 @@
+{
+  "dataset_name": "TOPIK II Reading Q21 Editorial Glosses",
+  "source_type": "EDITORIAL_MANUAL",
+  "note": "Các nghĩa này phục vụ học tập; không phải nghĩa Việt được trích từ glossary của sách.",
+  "glosses": [
+    { "expression_ko": "눈을 맞추다", "meaning_vi_editorial": "nhìn vào mắt nhau; giao tiếp bằng ánh mắt" },
+    { "expression_ko": "맛을 보다", "meaning_vi_editorial": "nếm thử; trải nghiệm thử một việc hoặc sự việc" },
+    { "expression_ko": "문을 두드리다", "meaning_vi_editorial": "gõ cửa; nghĩa bóng là thử bước vào hoặc tìm cơ hội ở một lĩnh vực mới" },
+    { "expression_ko": "손에 잡히다", "meaning_vi_editorial": "cầm hoặc nắm được; nghĩa bóng là cụ thể, thấy rõ hoặc trong tầm với" },
+    { "expression_ko": "손에 꼽히다", "meaning_vi_editorial": "thuộc số ít nổi bật hoặc hàng đầu trong một nhóm" },
+    { "expression_ko": "눈에 걸리다", "meaning_vi_editorial": "lọt vào mắt hoặc khiến trong lòng bận tâm" },
+    { "expression_ko": "눈에 밟히다", "meaning_vi_editorial": "cứ hiện lên trong tâm trí, khiến không yên lòng" },
+    { "expression_ko": "손에 익다", "meaning_vi_editorial": "quen tay, thành thạo do đã làm nhiều" },
+    { "expression_ko": "발이 넓다", "meaning_vi_editorial": "có quan hệ rộng, quen biết nhiều người" },
+    { "expression_ko": "눈길을 끌다", "meaning_vi_editorial": "thu hút sự chú ý" },
+    { "expression_ko": "눈높이에 맞다", "meaning_vi_editorial": "phù hợp với trình độ, tiêu chuẩn hoặc góc nhìn của đối tượng" },
+    { "expression_ko": "발뺌을 하다", "meaning_vi_editorial": "chối bỏ trách nhiệm hoặc tìm cách thoái thác" },
+    { "expression_ko": "한 우물을 파다", "meaning_vi_editorial": "kiên trì tập trung vào một việc hoặc một lĩnh vực" }
+  ]
+}

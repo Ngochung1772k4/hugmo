@@ -12,6 +12,7 @@
     "validate:topik-writing": "node scripts/validate_topik_writing_51_52_seed.mjs",
     "test:topik-reading-20-21": "node --test tests/topikReading2021Seed.test.mjs",
     "validate:topik-reading-20-21": "node scripts/validate_topik_reading_20_21_seed.mjs",
+    "validate:topik-reading-21-editorial": "node scripts/topikReading21EditorialGlossesSeed.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
