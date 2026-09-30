@@ -27,6 +27,15 @@ import { Q54HubPage } from './features/topikWriting54/pages/Q54HubPage';
 import { Q54QuestionPage } from './features/topikWriting54/pages/Q54QuestionPage';
 import { Q54PracticePage } from './features/topikWriting54/pages/Q54PracticePage';
 import { Q54ErrorNotebookPage } from './features/topikWriting54/pages/Q54ErrorNotebookPage';
+import { Q54TrainingLabPage } from './features/topikWriting54/pages/Q54TrainingLabPage';
+import { Q54IdeaSprintPage } from './features/topikWriting54/pages/Q54IdeaSprintPage';
+import { Q54LogicChainPage } from './features/topikWriting54/pages/Q54LogicChainPage';
+import { Q54SentenceBuilderPage } from './features/topikWriting54/pages/Q54SentenceBuilderPage';
+import { Q54CompositionPage } from './features/topikWriting54/pages/Q54CompositionPage';
+import { Q54ReviewPage } from './features/topikWriting54/pages/Q54ReviewPage';
+import { Q54DrillsPage } from './features/topikWriting54/pages/Q54DrillsPage';
+import { Q54RewritePage } from './features/topikWriting54/pages/Q54RewritePage';
+import { Q54WeaknessPage } from './features/topikWriting54/pages/Q54WeaknessPage';
 import { Writing51HubPage } from './features/topikWriting5152/pages/Writing51HubPage';
 import { Writing51LearnPage } from './features/topikWriting5152/pages/Writing51LearnPage';
 import { Writing51PracticePage } from './features/topikWriting5152/pages/Writing51PracticePage';
@@ -129,6 +138,15 @@ export const App: React.FC = () => {
               <Route path="/topik/writing/54/questions/:id" element={<ProtectedRoute><Q54QuestionPage /></ProtectedRoute>} />
               <Route path="/topik/writing/54/practice/:id" element={<ProtectedRoute><Q54PracticePage /></ProtectedRoute>} />
               <Route path="/topik/writing/54/errors" element={<ProtectedRoute><Q54ErrorNotebookPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54/lab/drills" element={<ProtectedRoute><Q54DrillsPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54/lab/rewrite/:errorId" element={<ProtectedRoute><Q54RewritePage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54/lab/review/:draftId" element={<ProtectedRoute><Q54ReviewPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54/lab/weakness" element={<ProtectedRoute><Q54WeaknessPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54/lab/sessions/:sessionId/sprint" element={<ProtectedRoute><Q54IdeaSprintPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54/lab/sessions/:sessionId/logic" element={<ProtectedRoute><Q54LogicChainPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54/lab/sessions/:sessionId/sentence" element={<ProtectedRoute><Q54SentenceBuilderPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54/lab/sessions/:sessionId/compose/:unit" element={<ProtectedRoute><Q54CompositionPage /></ProtectedRoute>} />
+              <Route path="/topik/writing/54/lab/:id" element={<ProtectedRoute><Q54TrainingLabPage /></ProtectedRoute>} />
               <Route path="/topik/writing/51" element={<ProtectedRoute><Writing51HubPage /></ProtectedRoute>} />
               <Route path="/topik/writing/51/learn" element={<ProtectedRoute><Writing51LearnPage /></ProtectedRoute>} />
               <Route path="/topik/writing/51/practice" element={<Navigate to="/topik/writing/51" replace />} />

@@ -85,6 +85,28 @@ export interface Q54GeneratedIdea {
   logicChainVi: string[];
   recommendedCollocations: string[];
 }
+export type Q54TrainingMode = 'PRACTICE' | 'EXAM';
+export type Q54TrainingSessionStatus = 'ACTIVE' | 'SUBMITTED' | 'EXPIRED' | 'ABANDONED';
+export type Q54BankStage = 'CLOSED' | 'IDEA' | 'PATTERN';
+export type Q54SkillType = 'IDEA_SPRINT' | 'LOGIC_CHAIN' | 'SENTENCE_BUILDER' | 'REWRITE' | 'ERROR_DRILL';
+export type Q54DraftUnitType = 'THREE_SENTENCE' | 'PARAGRAPH' | 'ESSAY';
+export interface Q54TrainingSession { id: string; question_id: string; mode: Q54TrainingMode; status: Q54TrainingSessionStatus; bank_stage: Q54BankStage; question_snapshot: Record<string, unknown>; requirements_snapshot: Q54Requirement[]; started_at: string; ends_at: string | null; }
+export interface Q54DraftError { type: Q54ErrorType; original: string; corrected: string; explanationVi: string; }
+export interface Q54DraftAssessment {
+  verdict: 'ACCEPTABLE' | 'NEEDS_REVISION'; summaryVi: string;
+  requirements: Array<{ requirementId: string; status: 'COVERED' | 'PARTIAL' | 'MISSING'; evidenceKo: string; suggestionVi: string }>;
+  structure: Array<{ label: string; status: 'GOOD' | 'NEEDS_REVISION'; messageVi: string }>;
+  logic: { status: 'COHERENT' | 'NEEDS_REVISION'; messageVi: string };
+  collocations: Array<{ expression: string; suggestion: string; explanationVi: string }>;
+  repetition: Array<{ expression: string; count: number; alternatives: string[] }>;
+  cohesion: { status: 'GOOD' | 'NEEDS_REVISION'; messageVi: string };
+  formalStyle: { status: 'GOOD' | 'NEEDS_REVISION'; messageVi: string };
+  errors: Q54DraftError[]; usedPatterns: string[]; rewriteFocus: string[];
+}
+export interface Q54WritingDraft { id: string; session_id: string | null; question_id: string; requirement_id: string | null; idea_id: string | null; unit_type: Q54DraftUnitType; draft_number: number; parent_draft_id: string | null; content_ko: string; assistance_stage: Q54BankStage; state: 'PROCESSING' | 'ASSESSED' | 'FAILED'; assessment_json: Q54DraftAssessment | null; created_at: string; }
+export interface Q54ErrorDrillItem { promptKo: string; promptVi: string; options: string[]; correctIndex: number; explanationVi: string; errorKey: string; }
+export interface Q54ErrorDrillSet { id: string; state: 'PROCESSING' | 'READY' | 'FAILED' | 'COMPLETED'; items_json: Q54ErrorDrillItem[] | null; created_at: string; }
+export interface Q54CollocationReviewProgress { collocation_id: string; state: 'NEW' | 'LEARNING' | 'REVIEW' | 'MASTERED'; correct_streak: number; due_at: string; collocation?: Q54Collocation; }
 export interface Q54Assessment { verdict: 'ACCEPTABLE' | 'NEEDS_REVISION'; summaryVi: string; correctedSentence: string; errors: Array<{ type: Q54ErrorType; original: string; corrected: string; explanationVi: string }>; naturalAlternatives: string[]; usedPatterns: string[]; usedVocabulary: string[]; }
 export interface Q54SentenceAttempt { id: string; state: 'PROCESSING' | 'ASSESSED' | 'FAILED'; assessment_json: Q54Assessment | null; hint_level: number; hints_used: string[]; created_at: string; }
-export interface Q54UserError { id: string; error_key: string; error_type: Q54ErrorType; original_text: string; corrected_text: string; explanation_vi: string; occurrence_count: number; first_seen_at: string; last_seen_at: string; mastered: boolean; }
+export interface Q54UserError { id: string; error_key: string; error_type: Q54ErrorType; original_text: string; corrected_text: string; explanation_vi: string; collocation_id?: string | null; occurrence_count: number; first_seen_at: string; last_seen_at: string; mastered: boolean; }

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test:q54": "node --test tests/q54RequirementClassification.test.mjs tests/q54TranslationWorkbench.test.mjs tests/q54ContentBankSeed.test.mjs tests/q54ExpandedIdeaBank.test.mjs",
+    "test:q54": "node --test tests/q54RequirementClassification.test.mjs tests/q54TranslationWorkbench.test.mjs tests/q54ContentBankSeed.test.mjs tests/q54ExpandedIdeaBank.test.mjs tests/q54TrainingLab.test.mjs",
     "validate:q54-idea-bank": "node scripts/topikQ54ExpandedIdeaBankSeed.mjs",
     "test:topik-writing": "node --test tests/topikWriting5152Seed.test.mjs",
     "validate:topik-writing": "node scripts/validate_topik_writing_51_52_seed.mjs",
