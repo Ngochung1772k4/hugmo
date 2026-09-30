@@ -22,27 +22,26 @@ export async function analyzeQ54Question(promptKo: string, isDemo: boolean): Pro
   return result;
 }
 
+function demoIdea(keywordKo: string, keywordVi: string, logicChainKo: string[]): Q54GeneratedIdea {
+  return {
+    keywordKo,
+    keywordVi,
+    reasonKo: '이 주제와 관련된 구체적인 근거를 제시할 수 있기 때문이다.',
+    reasonVi: 'Vì có thể đưa ra một căn cứ cụ thể liên quan đến chủ đề này.',
+    resultKo: '글의 논리를 더 분명하게 만들 수 있다.',
+    resultVi: 'Có thể làm logic của bài viết rõ ràng hơn.',
+    logicChainKo,
+    logicChainVi: logicChainKo,
+    recommendedCollocations: [keywordKo, '구체적인 근거를 제시하다'],
+  };
+}
+
 const demoIdeasByGroup: Record<Q54FunctionGroup, Q54GeneratedIdea[]> = {
-  POSITIVE: [
-    { keywordKo: '삶의 질 향상', keywordVi: 'Nâng cao chất lượng cuộc sống', logicSteps: ['Lợi ích thiết thực', 'Cuộc sống tốt hơn'] },
-    { keywordKo: '장기적인 안정', keywordVi: 'Sự ổn định lâu dài', logicSteps: ['Duy trì thói quen tốt', 'Giảm rủi ro về sau'] },
-  ],
-  NEGATIVE: [
-    { keywordKo: '건강 문제', keywordVi: 'Vấn đề sức khỏe', logicSteps: ['Thói quen không phù hợp', 'Tác động tiêu cực'] },
-    { keywordKo: '경제적 부담', keywordVi: 'Gánh nặng kinh tế', logicSteps: ['Chi phí tăng', 'Khó duy trì lâu dài'] },
-  ],
-  CAUSE: [
-    { keywordKo: '시간이 부족하다', keywordVi: 'Thiếu thời gian', logicSteps: ['Cuộc sống bận rộn', 'Khó thực hành thường xuyên'] },
-    { keywordKo: '정보가 부족하다', keywordVi: 'Thiếu thông tin', logicSteps: ['Không biết cách phù hợp', 'Dễ lựa chọn sai'] },
-  ],
-  SOLUTION: [
-    { keywordKo: '실천 계획을 세우다', keywordVi: 'Lập kế hoạch thực hành', logicSteps: ['Đặt mục tiêu nhỏ', 'Duy trì đều đặn'] },
-    { keywordKo: '올바른 정보를 활용하다', keywordVi: 'Sử dụng thông tin đúng đắn', logicSteps: ['Tìm nguồn tin cậy', 'Áp dụng phù hợp'] },
-  ],
-  SPECIAL: [
-    { keywordKo: '사회적 역할', keywordVi: 'Vai trò xã hội', logicSteps: ['Các bên cùng tham gia', 'Tạo thay đổi tích cực'] },
-    { keywordKo: '개인 상황', keywordVi: 'Hoàn cảnh cá nhân', logicSteps: ['Xem xét điều kiện riêng', 'Chọn cách phù hợp'] },
-  ],
+  POSITIVE: [demoIdea('삶의 질 향상', 'Nâng cao chất lượng cuộc sống', ['Lợi ích thiết thực', 'Cuộc sống tốt hơn', 'Chất lượng sống 향상']), demoIdea('장기적인 안정', 'Sự ổn định lâu dài', ['Duy trì thói quen tốt', 'Giảm rủi ro về sau', '안정적인 생활'])],
+  NEGATIVE: [demoIdea('건강 문제', 'Vấn đề sức khỏe', ['Thói quen không phù hợp', 'Tác động tiêu cực', '건강 문제 발생']), demoIdea('경제적 부담', 'Gánh nặng kinh tế', ['Chi phí tăng', 'Khó duy trì lâu dài', '경제적 부담 증가'])],
+  CAUSE: [demoIdea('시간이 부족하다', 'Thiếu thời gian', ['Cuộc sống bận rộn', 'Khó thực hành thường xuyên', '시간 부족']), demoIdea('정보가 부족하다', 'Thiếu thông tin', ['Không biết cách phù hợp', 'Dễ lựa chọn sai', '잘못된 선택'])],
+  SOLUTION: [demoIdea('실천 계획을 세우다', 'Lập kế hoạch thực hành', ['Đặt mục tiêu nhỏ', 'Duy trì đều đặn', '지속적인 실천']), demoIdea('올바른 정보를 활용하다', 'Sử dụng thông tin đúng đắn', ['Tìm nguồn tin cậy', 'Áp dụng phù hợp', '올바른 활용'])],
+  SPECIAL: [demoIdea('사회적 역할', 'Vai trò xã hội', ['Các bên cùng tham gia', 'Tạo thay đổi tích cực', '사회적 변화']), demoIdea('개인 상황', 'Hoàn cảnh cá nhân', ['Xem xét điều kiện riêng', 'Chọn cách phù hợp', '적절한 선택'])],
 };
 
 export async function generateQ54Ideas(input: { questionId: string; requirementId: string; functionGroup: Q54FunctionGroup; isDemo: boolean }): Promise<Q54GeneratedIdea[]> {
@@ -53,7 +52,7 @@ export async function generateQ54Ideas(input: { questionId: string; requirementI
   if (Array.isArray(result.ideas)) return result.ideas;
   if (result.code === 'Q54_RATE_LIMIT_SHORT') throw new Error('Bạn đã gửi quá nhiều yêu cầu AI Q54 trong vài phút. Hãy thử lại sau.');
   if (result.code === 'Q54_RATE_LIMIT_DAILY') throw new Error('Bạn đã dùng hết lượt AI Q54 hôm nay.');
-  throw new Error('AI chưa thể tạo Idea Bank cho requirement này. Hãy thử lại sau.');
+  throw new Error('AI chưa thể tạo thêm ý cho requirement này. Hãy thử lại sau.');
 }
 
 export async function generateQ54TranslationExercise(input: { questionId: string; requirementId: string; isDemo: boolean }): Promise<string> {
@@ -93,7 +92,7 @@ function demoAssessment(answerKo: string, referenceAnswer: string | null): Q54As
 export async function checkQ54Sentence(input: { exerciseId: string; answerKo: string; hintLevel: number; hintsUsed: string[]; referenceAnswer: string | null; submissionId: string; isDemo: boolean }): Promise<{ attemptId: string; state: Q54SentenceAttempt['state']; assessment: Q54Assessment | null }> {
   if (input.isDemo || !isSupabaseConfigured) {
     const assessment = demoAssessment(input.answerKo, input.referenceAnswer);
-    for (const error of assessment.errors) saveDemoError({ error_key: `${error.type}|${error.original.normalize('NFC').trim().toLowerCase()}|${error.corrected.normalize('NFC').trim().toLowerCase()}`, error_type: error.type, original_text: error.original, corrected_text: error.corrected, explanation_vi: error.explanationVi });
+    for (const item of assessment.errors) saveDemoError({ error_key: `${item.type}|${item.original.normalize('NFC').trim().toLowerCase()}|${item.corrected.normalize('NFC').trim().toLowerCase()}`, error_type: item.type, original_text: item.original, corrected_text: item.corrected, explanation_vi: item.explanationVi });
     return { attemptId: input.submissionId, state: 'ASSESSED', assessment };
   }
   const { data, error } = await supabase.functions.invoke('check-q54-sentence', { body: { exerciseId: input.exerciseId, answerKo: input.answerKo, hintLevel: input.hintLevel, hintsUsed: input.hintsUsed, submissionId: input.submissionId } });

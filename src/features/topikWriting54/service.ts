@@ -123,7 +123,7 @@ function liveService(): Q54Service {
       const exactCollocationIds = new Set((links || []).filter((item: { topic_id: string }) => item.topic_id === question.topic_id).map((item: { collocation_id: string }) => item.collocation_id));
       const mappedPatternIds = new Set((patternLinks || []).map((item: { pattern_id: string }) => item.pattern_id));
       const [{ data: ideas, error: ideaError }, { data: exercises, error: exerciseError }] = await Promise.all([
-        supabase.from('q54_ideas').select('*').eq('topic_id', question.topic_id),
+        supabase.from('q54_ideas').select('*').or(`scope.eq.GLOBAL,topic_id.eq.${question.topic_id}`).order('reuse_score', { ascending: false, nullsFirst: false }),
         requirementIds.length ? supabase.from('q54_translation_exercises').select(exerciseSelect).in('requirement_id', requirementIds).order('created_at', { ascending: false }) : Promise.resolve({ data: [], error: null }),
       ]);
       if (ideaError || exerciseError) throw ideaError || exerciseError;
