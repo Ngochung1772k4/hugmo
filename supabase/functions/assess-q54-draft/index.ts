@@ -135,10 +135,15 @@ Deno.serve(async (req) => {
     const assessment = normalize(JSON.parse(payload?.choices?.[0]?.message?.content || ''), scopedRequirements, contentKo);
     if (!assessment) throw new Error('INVALID_AI_RESPONSE');
     const { data: completed, error: completeError } = await adminClient.rpc('complete_q54_draft_assessment', { p_draft_id: draft.id, p_assessment: assessment, p_provider: 'groq', p_model: model, p_prompt_version: 'q54-training-lab-assessment/v1', p_schema_version: 'q54-draft-assessment/v1' });
-    if (completeError) throw new Error('DRAFT_SAVE_FAILED');
+    if (completeError) {
+      console.error('Q54 draft assessment could not be stored', { draftId: draft.id, message: completeError.message, code: completeError.code });
+      throw new Error('DRAFT_SAVE_FAILED');
+    }
     return new Response(JSON.stringify({ draftId: draft.id, state: completed.state, assessment }), { headers });
   } catch (error) {
-    await adminClient.rpc('fail_q54_draft_assessment', { p_draft_id: draft.id, p_failure_code: error instanceof Error ? error.message : 'UNKNOWN' });
-    return new Response(JSON.stringify({ code: error instanceof Error ? error.message : 'DRAFT_ASSESSMENT_FAILED', draftId: draft.id }), { status: 502, headers });
+    const code = error instanceof Error ? error.message : 'DRAFT_ASSESSMENT_FAILED';
+    console.error('Q54 draft assessment failed', { draftId: draft.id, code });
+    await adminClient.rpc('fail_q54_draft_assessment', { p_draft_id: draft.id, p_failure_code: code });
+    return new Response(JSON.stringify({ code, draftId: draft.id }), { status: 502, headers });
   }
 });

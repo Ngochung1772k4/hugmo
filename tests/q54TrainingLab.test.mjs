@@ -10,6 +10,7 @@ const lab = readFileSync(new URL('../src/features/topikWriting54/pages/Q54Traini
 const composition = readFileSync(new URL('../src/features/topikWriting54/pages/Q54CompositionPage.tsx', import.meta.url), 'utf8');
 const sprint = readFileSync(new URL('../src/features/topikWriting54/pages/Q54IdeaSprintPage.tsx', import.meta.url), 'utf8');
 const logic = readFileSync(new URL('../src/features/topikWriting54/pages/Q54LogicChainPage.tsx', import.meta.url), 'utf8');
+const trainingService = readFileSync(new URL('../src/features/topikWriting54/training.ts', import.meta.url), 'utf8');
 
 test('Training Lab schema protects owner data and records all private learning entities', () => {
   for (const table of ['q54_training_sessions', 'q54_skill_attempts', 'q54_writing_drafts', 'q54_error_drill_sets', 'q54_collocation_review_progress']) {
@@ -62,6 +63,14 @@ test('draft assessment is grounded in the submitted content and scopes coverage 
   assert.match(assessor, /const scopedRequirements = unitType === 'ESSAY' \? requirements \|\| \[\] : selectedRequirement \? \[selectedRequirement\] : \[\]/);
   assert.match(assessor, /do not mark any other requirement missing/);
   assert.match(assessor, /normalize\([^\n]+scopedRequirements, contentKo\)/);
+});
+
+test('the client surfaces structured Edge Function failure codes instead of a generic non-2xx message', () => {
+  assert.match(assessor, /console\.error\('Q54 draft assessment failed'/);
+  assert.match(trainingService, /async function edgeMessage/);
+  assert.match(trainingService, /Q54_RATE_LIMIT_SHORT/);
+  assert.match(trainingService, /AI_UPSTREAM_FAILED/);
+  assert.match(trainingService, /await edgeMessage\(error, 'Không thể chấm bản viết\.'\)/);
 });
 
 test('the front end exposes the complete practice and review route family', () => {

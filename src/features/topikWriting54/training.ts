@@ -7,6 +7,26 @@ const emptyStore = (): DemoStore => ({ sessions: [], drafts: [], drills: [] });
 function readDemo(): DemoStore { try { return { ...emptyStore(), ...JSON.parse(localStorage.getItem(demoKey) || '') } as DemoStore; } catch { return emptyStore(); } }
 function writeDemo(value: DemoStore) { localStorage.setItem(demoKey, JSON.stringify(value)); }
 function message(error: unknown, fallback: string) { return error instanceof Error ? error.message : fallback; }
+async function edgeMessage(error: unknown, fallback: string) {
+  const context = (error as { context?: unknown } | null)?.context;
+  if (context instanceof Response) {
+    try {
+      const payload = await context.clone().json() as { code?: string };
+      const messages: Record<string, string> = {
+        Q54_RATE_LIMIT_SHORT: 'Bạn đã dùng hết 5 yêu cầu AI trong 5 phút. Hãy thử lại sau ít phút.',
+        Q54_RATE_LIMIT_DAILY: 'Bạn đã dùng hết 30 yêu cầu AI hôm nay. Hãy thử lại vào ngày mai.',
+        EXAM_TIME_EXPIRED: 'Đã hết giờ Exam Mode nên bài không thể nộp.',
+        AI_UPSTREAM_FAILED: 'Groq hiện không phản hồi. Bài viết vẫn được lưu, hãy thử nộp lại với submission mới.',
+        INVALID_AI_RESPONSE: 'AI trả về dữ liệu chưa hợp lệ. Bài viết vẫn được lưu, hãy thử lại.',
+        DRAFT_SAVE_FAILED: 'AI đã phản hồi nhưng database không thể lưu feedback. Hãy thử lại.',
+        DRAFT_CLAIM_FAILED: 'Không thể tạo lượt chấm cho bản viết này.',
+        DRAFT_ASSESSOR_NOT_CONFIGURED: 'Dịch vụ chấm AI chưa được cấu hình trên server.',
+      };
+      if (payload.code) return messages[payload.code] || `Không thể chấm bài (${payload.code}).`;
+    } catch { /* Use the normal error message when the response body is unavailable. */ }
+  }
+  return message(error, fallback);
+}
 
 const demoAssessment: Q54DraftAssessment = {
   verdict: 'NEEDS_REVISION', summaryVi: 'Demo Mode lưu bản viết và hiển thị rubric mẫu. Bản online sẽ nhận feedback AI theo nội dung của bạn.',
@@ -69,7 +89,7 @@ function liveService(): Q54TrainingService {
     async recordIdeaSprint(input) { const { error } = await supabase.rpc('record_q54_idea_sprint', { p_session_id: input.sessionId, p_requirement_id: input.requirementId, p_ideas: input.ideas, p_duration_ms: input.durationMs, p_skipped: input.skipped }); if (error) throw error; },
     async recordLogicChain(input) { const { data, error } = await supabase.rpc('record_q54_logic_chain_attempt', { p_session_id: input.sessionId, p_idea_id: input.ideaId, p_ordered_nodes: input.orderedNodes, p_duration_ms: input.durationMs }); if (error) throw error; return { correct: Boolean(data.correct), expected: data.expected || [] }; },
     async recordSkill(input) { const { error } = await supabase.rpc('record_q54_skill_attempt', { p_session_id: input.sessionId, p_requirement_id: input.requirementId || null, p_idea_id: input.ideaId || null, p_skill_type: input.skillType, p_input: input.input, p_result: input.result, p_duration_ms: input.durationMs || null }); if (error) throw error; },
-    async assessDraft(input) { const { data, error } = await supabase.functions.invoke('assess-q54-draft', { body: input }); if (error) throw new Error(error.message); const result = data as { code?: string; draftId?: string; state?: string; assessment?: Q54DraftAssessment | null }; if (result.code || !result.draftId || !result.state) throw new Error(result.code || 'Không thể chấm bản viết.'); return { draftId: result.draftId, state: result.state, assessment: result.assessment || null }; },
+    async assessDraft(input) { const { data, error } = await supabase.functions.invoke('assess-q54-draft', { body: input }); if (error) throw new Error(await edgeMessage(error, 'Không thể chấm bản viết.')); const result = data as { code?: string; draftId?: string; state?: string; assessment?: Q54DraftAssessment | null }; if (result.code || !result.draftId || !result.state) throw new Error(result.code || 'Không thể chấm bản viết.'); return { draftId: result.draftId, state: result.state, assessment: result.assessment || null }; },
     async getDraft(draftId) { const { data, error } = await supabase.from('q54_writing_drafts').select('*').eq('id', draftId).single(); if (error) throw error; return asDraft(data); },
     async getDrafts(questionId) { const { data, error } = await supabase.from('q54_writing_drafts').select('*').eq('question_id', questionId).order('created_at', { ascending: false }); if (error) throw error; return (data || []).map(asDraft); },
     async recordRewrite(errorId, answerKo) { const { data, error } = await supabase.rpc('record_q54_rewrite_attempt', { p_error_id: errorId, p_answer_ko: answerKo }); if (error) throw error; return { correct: Boolean(data.correct), mastered: Boolean(data.mastered), successDays: Number(data.successDays || 0) }; },
