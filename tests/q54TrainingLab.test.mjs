@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { normalizeEvidence, normalizeQ54Assessment } from '../supabase/functions/_shared/q54-assessment-validation.mjs';
 
-const migration = readFileSync(new URL('../supabase/migrations/20261002000014_q54_training_lab.sql', import.meta.url), 'utf8');
+const labMigration = readFileSync(new URL('../supabase/migrations/20261002000014_q54_training_lab.sql', import.meta.url), 'utf8');
+const groundingMigration = readFileSync(new URL('../supabase/migrations/20261002000015_q54_assessment_grounding.sql', import.meta.url), 'utf8');
 const assessor = readFileSync(new URL('../supabase/functions/assess-q54-draft/index.ts', import.meta.url), 'utf8');
-const drillGenerator = readFileSync(new URL('../supabase/functions/generate-q54-error-drill/index.ts', import.meta.url), 'utf8');
+const prompt = readFileSync(new URL('../supabase/functions/assess-q54-draft/system-prompt.mjs', import.meta.url), 'utf8');
 const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 const lab = readFileSync(new URL('../src/features/topikWriting54/pages/Q54TrainingLabPage.tsx', import.meta.url), 'utf8');
 const composition = readFileSync(new URL('../src/features/topikWriting54/pages/Q54CompositionPage.tsx', import.meta.url), 'utf8');
@@ -12,72 +14,90 @@ const sprint = readFileSync(new URL('../src/features/topikWriting54/pages/Q54Ide
 const logic = readFileSync(new URL('../src/features/topikWriting54/pages/Q54LogicChainPage.tsx', import.meta.url), 'utf8');
 const trainingService = readFileSync(new URL('../src/features/topikWriting54/training.ts', import.meta.url), 'utf8');
 
-test('Training Lab schema protects owner data and records all private learning entities', () => {
-  for (const table of ['q54_training_sessions', 'q54_skill_attempts', 'q54_writing_drafts', 'q54_error_drill_sets', 'q54_collocation_review_progress']) {
-    assert.match(migration, new RegExp(`create table if not exists public\\.${table}`));
-    assert.match(migration, new RegExp(`alter table public\\.${table} enable row level security`));
-  }
-  assert.match(migration, /unique \(user_id, submission_id\)/);
-  assert.match(migration, /unique index if not exists uq_q54_skill_attempts_submission/);
-  assert.match(migration, /error_key, error_type/);
-  assert.match(migration, /occurrence_count = public\.q54_user_errors\.occurrence_count \+ 1/);
+const content = `환경 보호는 사람들의 건강을 유지하는 데 중요한 역할을 한다.
+환경 오염은 줄어들면 질병 발생 위험이 낮아질 수 있다.
+이를 통해 건강한 환경에서 생활할 수 있다.`;
+const requirement = { id: 'r-health', promptKo: '환경 보호와 자원 절약이 필요한 이유는 무엇인가?' };
+const evidence = (value, offset = content.indexOf(value)) => ({ start: offset, end: offset + value.length, text: value });
+const groundedProviderResponse = () => ({
+  coverage: [{ requirementId: 'r-health', status: 'PARTIAL', evidence: [evidence('환경 보호는 사람들의 건강을 유지하는 데 중요한 역할을 한다.')], missingPointVi: '자원 절약이 필요한 이유를 추가하세요.' }],
+  sentenceFunctions: [
+    { slot: 'MAIN_IDEA', status: 'GOOD', commentVi: 'Ý chính rõ.', evidence: [evidence('환경 보호는 사람들의 건강을 유지하는 데 중요한 역할을 한다.')] },
+    { slot: 'WHY', status: 'WEAK', commentVi: 'Câu này chưa giải thích việc tiết kiệm tài nguyên.', evidence: [evidence('환경 오염은 줄어들면 질병 발생 위험이 낮아질 수 있다.')] },
+    { slot: 'RESULT', status: 'GOOD', commentVi: 'Kết quả có liên kết.', evidence: [evidence('이를 통해 건강한 환경에서 생활할 수 있다.')] },
+  ],
+  logic: { status: 'LOGIC_GAP', severity: 'LOW', chain: ['환경 보호', '건강'], explanationVi: 'Mạch bảo vệ môi trường đến sức khỏe rõ, nhưng thiếu phần tiết kiệm tài nguyên.', missingLink: 'Lý do cần tiết kiệm tài nguyên', evidence: [evidence('이를 통해 건강한 환경에서 생활할 수 있다.')] },
+  issues: [{ category: 'PARTICLE', severity: 'LOW', original: '환경 오염은', corrected: '환경 오염이', explanationVi: 'Ở đây chủ ngữ của động từ giảm phù hợp hơn với trợ từ 이.' }],
+  repetition: [],
 });
 
-test('Sprint, deterministic logic, and Exam Mode have their required server guards', () => {
-  assert.match(migration, /between 0 and 60000/);
-  assert.match(migration, /correct := p_ordered_nodes = idea\.logic_chain_ko/);
-  assert.match(migration, /now\(\) \+ interval '30 minutes'/);
-  assert.match(migration, /EXAM_TIME_EXPIRED/);
-  assert.match(migration, /Assistance is locked in exam mode/);
-  assert.match(migration, /status = 'SUBMITTED', submitted_at = now\(\)/);
+test('Training Lab schema protects owner data, idempotency, and Exam Mode guards', () => {
+  for (const table of ['q54_training_sessions', 'q54_skill_attempts', 'q54_writing_drafts', 'q54_error_drill_sets', 'q54_collocation_review_progress']) {
+    assert.match(labMigration, new RegExp(`create table if not exists public\\.${table}`));
+    assert.match(labMigration, new RegExp(`alter table public\\.${table} enable row level security`));
+  }
+  assert.match(labMigration, /unique \(user_id, submission_id\)/);
+  assert.match(labMigration, /Q54_RATE_LIMIT_SHORT/);
+  assert.match(labMigration, /EXAM_TIME_EXPIRED/);
+  assert.match(labMigration, /now\(\) \+ interval '30 minutes'/);
+  assert.match(labMigration, /correct := p_ordered_nodes = idea\.logic_chain_ko/);
   assert.match(sprint, /remaining === 0/);
   assert.match(logic, /recordLogicChain/);
 });
 
-test('claims are idempotent before quota and only Edge Functions can persist assessment', () => {
-  assert.match(migration, /pg_advisory_xact_lock\(hashtextextended\(uid::text \|\| ':' \|\| p_submission_id::text, 5401\)\)/);
-  assert.match(migration, /pg_advisory_xact_lock\(hashtextextended\(uid::text \|\| ':' \|\| p_submission_id::text, 5402\)\)/);
-  assert.match(migration, /perform public\.claim_q54_ai_request\('DRAFT_ASSESSMENT'\)/);
-  assert.match(migration, /coalesce\(auth\.jwt\(\)->>'role', ''\) <> 'service_role'/);
-  assert.match(assessor, /claim_q54_draft_submission/);
-  assert.match(assessor, /adminClient\.rpc\('complete_q54_draft_assessment'/);
-  assert.match(assessor, /Never write a full replacement essay/);
-  assert.match(assessor, /Do not give a numerical TOPIK score/);
+test('new draft claims persist immutable assessment context before the AI call', () => {
+  assert.match(groundingMigration, /assessment_context_json jsonb/);
+  assert.match(groundingMigration, /questionSnapshot/);
+  assert.match(groundingMigration, /requirementsAllowedForAssessment/);
+  assert.match(groundingMigration, /pg_advisory_xact_lock\(hashtextextended\(uid::text \|\| ':' \|\| p_submission_id::text, 5401\)\)/);
+  assert.match(groundingMigration, /perform public\.claim_q54_ai_request\('DRAFT_ASSESSMENT'\)/);
+  assert.match(groundingMigration, /jsonb_array_elements\(p_assessment->'issues'\)/);
+  assert.match(groundingMigration, /position\(issue_item->>'original' in draft\.content_ko\) = 0/);
 });
 
-test('draft feedback covers requirements and deterministic repetition while drill generation produces exactly five items', () => {
-  assert.match(assessor, /COVERED' \| 'PARTIAL' \| 'MISSING/);
-  assert.match(assessor, /return count > 2/);
-  for (const dimension of ['logic:', 'collocations:', 'repetition:', 'cohesion:', 'formalStyle:']) assert.match(assessor, new RegExp(dimension));
-  assert.match(drillGenerator, /Create exactly five concise TOPIK Korean error-repair multiple choice drills/);
-  assert.match(drillGenerator, /items\.length === 5/);
-  assert.match(drillGenerator, /claim_q54_error_drill/);
+test('assessor uses only the claimed draft and immutable context', () => {
+  assert.match(assessor, /const submittedContent = typeof draft\.content_ko/);
+  assert.match(assessor, /parseAssessmentContext\(draft\.assessment_context_json/);
+  assert.doesNotMatch(assessor, /\.from\('q54_questions'\)/);
+  assert.doesNotMatch(assessor, /\.from\('q54_question_requirements'\)/);
+  assert.match(assessor, /for \(let attempt = 0; attempt < 2/);
+  assert.match(prompt, /Evaluate ONLY the exact Korean draft in submittedContent/);
+  assert.match(prompt, /Never report an issue unless its original span exists verbatim/);
+  assert.match(prompt, /Never mention or mark another requirement missing/i);
+  assert.match(prompt, /never produce a full replacement paragraph or essay/i);
 });
 
-test('draft assessment is grounded in the submitted content and scopes coverage by unit type', () => {
-  assert.match(assessor, /content\.includes\(original\)/);
-  assert.match(assessor, /content\.includes\(expression\)/);
-  assert.match(assessor, /content\.includes\(evidenceKo\)/);
-  assert.match(assessor, /Every grammar or collocation issue must include original copied exactly from that draft/);
-  assert.match(assessor, /Do not use previous drafts, conversation history, Error Notebook, examples, or reference answers as current-draft errors/);
-  assert.match(assessor, /const scopedRequirements = unitType === 'ESSAY' \? requirements \|\| \[\] : selectedRequirement \? \[selectedRequirement\] : \[\]/);
-  assert.match(assessor, /do not mark any other requirement missing/);
-  assert.match(assessor, /normalize\([^\n]+scopedRequirements, contentKo\)/);
+test('real three-sentence fixture retains exact feedback and its scope', () => {
+  const assessment = normalizeQ54Assessment(groundedProviderResponse(), { content, allowedRequirements: [requirement], selectedRequirementId: requirement.id, unitType: 'THREE_SENTENCE' });
+  assert.ok(assessment);
+  assert.deepEqual(assessment.coverage.map((item) => item.status), ['PARTIAL']);
+  assert.deepEqual(assessment.issues.map((item) => item.original), ['환경 오염은']);
+  assert.equal(assessment.logic?.status, 'LOGIC_GAP');
+  assert.deepEqual(assessment.sentenceFunctions.map((item) => item.status), ['GOOD', 'WEAK', 'GOOD']);
+  assert.equal(assessment.issues.some((item) => item.original === '유지한은' || item.original === '역할을 한다'), false);
 });
 
-test('the client surfaces structured Edge Function failure codes instead of a generic non-2xx message', () => {
-  assert.match(assessor, /console\.error\('Q54 draft assessment failed'/);
-  assert.match(trainingService, /async function edgeMessage/);
-  assert.match(trainingService, /Q54_RATE_LIMIT_SHORT/);
-  assert.match(trainingService, /AI_UPSTREAM_FAILED/);
-  assert.match(trainingService, /await edgeMessage\(error, 'Không thể chấm bản viết\.'\)/);
+test('validator drops hallucinated issues and rejects wrong requirement coverage', () => {
+  const raw = groundedProviderResponse();
+  raw.issues.push({ category: 'GRAMMAR', severity: 'HIGH', original: '유지한은', corrected: '유지하는', explanationVi: 'Không có trong bài.' });
+  const assessment = normalizeQ54Assessment(raw, { content, allowedRequirements: [requirement], selectedRequirementId: requirement.id, unitType: 'THREE_SENTENCE' });
+  assert.ok(assessment);
+  assert.deepEqual(assessment.issues.map((item) => item.original), ['환경 오염은']);
+  const wrongScope = { ...groundedProviderResponse(), coverage: [{ requirementId: 'r-other', status: 'COVERED', evidence: [evidence('환경 보호')], missingPointVi: null }] };
+  assert.equal(normalizeQ54Assessment(wrongScope, { content, allowedRequirements: [requirement], selectedRequirementId: requirement.id, unitType: 'THREE_SENTENCE' }), null);
 });
 
-test('the front end exposes the complete practice and review route family', () => {
-  for (const route of ['/lab/drills', '/lab/rewrite/:errorId', '/lab/review/:draftId', '/lab/weakness', '/sessions/:sessionId/sprint', '/sessions/:sessionId/logic', '/sessions/:sessionId/sentence', '/sessions/:sessionId/compose/:unit']) {
-    assert.match(app, new RegExp(route.replaceAll('/', '\\/')));
-  }
+test('validator repairs only a unique evidence offset and drops ambiguous evidence', () => {
+  const unique = normalizeEvidence({ start: 999, end: 1002, text: '환경 보호' }, content);
+  assert.deepEqual(unique, { start: 0, end: '환경 보호'.length, text: '환경 보호' });
+  const duplicate = normalizeEvidence({ start: 999, end: 1002, text: '환경' }, content);
+  assert.equal(duplicate, null);
+});
+
+test('front end exposes the complete practice and review route family', () => {
+  for (const route of ['/lab/drills', '/lab/rewrite/:errorId', '/lab/review/:draftId', '/lab/weakness', '/sessions/:sessionId/sprint', '/sessions/:sessionId/logic', '/sessions/:sessionId/sentence', '/sessions/:sessionId/compose/:unit']) assert.match(app, new RegExp(route.replaceAll('/', '\\/')));
   assert.match(lab, /compose\/ESSAY/);
   assert.match(composition, /600.{1,2}700/);
   assert.match(composition, /3.{1,2}5/);
+  assert.match(trainingService, /DRAFT_CONTEXT_MISSING/);
 });

@@ -13,6 +13,7 @@ async function edgeMessage(error: unknown, fallback: string) {
     try {
       const payload = await context.clone().json() as { code?: string };
       const messages: Record<string, string> = {
+        DRAFT_CONTEXT_MISSING: 'The saved draft context is incomplete. Please submit this draft again with a new submission.',
         Q54_RATE_LIMIT_SHORT: 'Bạn đã dùng hết 5 yêu cầu AI trong 5 phút. Hãy thử lại sau ít phút.',
         Q54_RATE_LIMIT_DAILY: 'Bạn đã dùng hết 30 yêu cầu AI hôm nay. Hãy thử lại vào ngày mai.',
         EXAM_TIME_EXPIRED: 'Đã hết giờ Exam Mode nên bài không thể nộp.',
@@ -29,10 +30,10 @@ async function edgeMessage(error: unknown, fallback: string) {
 }
 
 const demoAssessment: Q54DraftAssessment = {
-  verdict: 'NEEDS_REVISION', summaryVi: 'Demo Mode lưu bản viết và hiển thị rubric mẫu. Bản online sẽ nhận feedback AI theo nội dung của bạn.',
-  requirements: [], structure: [{ label: 'Cấu trúc', status: 'NEEDS_REVISION', messageVi: 'Hãy kiểm tra ý chính, giải thích và kết quả.' }],
-  logic: { status: 'NEEDS_REVISION', messageVi: 'Kiểm tra lại quan hệ nguyên nhân và kết quả.' }, collocations: [], repetition: [],
-  cohesion: { status: 'NEEDS_REVISION', messageVi: 'Dùng từ nối để liên kết ý rõ hơn.' }, formalStyle: { status: 'GOOD', messageVi: 'Duy trì văn phong trang trọng.' }, errors: [], usedPatterns: [], rewriteFocus: ['Bổ sung dẫn giải cụ thể cho từng requirement.'],
+  summaryVi: 'Demo Mode stores the draft and shows a sample rubric. Online assessment validates feedback against the submitted content.',
+  summary: { overall: 'Demo Mode stores the draft and shows a sample rubric. Online assessment validates feedback against the submitted content.', strengths: [], nextFocus: ['Check the main idea, reason, and result before submitting again.'] },
+  coverage: [], sentenceFunctions: [], logic: null, issues: [], repetition: [],
+  nextDraft: { priority1: 'Add a direct explanation for the requirement being practised.', priority2: null, priority3: null },
 };
 
 function asSession(value: unknown): Q54TrainingSession { return value as Q54TrainingSession; }

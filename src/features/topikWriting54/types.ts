@@ -91,17 +91,15 @@ export type Q54BankStage = 'CLOSED' | 'IDEA' | 'PATTERN';
 export type Q54SkillType = 'IDEA_SPRINT' | 'LOGIC_CHAIN' | 'SENTENCE_BUILDER' | 'REWRITE' | 'ERROR_DRILL';
 export type Q54DraftUnitType = 'THREE_SENTENCE' | 'PARAGRAPH' | 'ESSAY';
 export interface Q54TrainingSession { id: string; question_id: string; mode: Q54TrainingMode; status: Q54TrainingSessionStatus; bank_stage: Q54BankStage; question_snapshot: Record<string, unknown>; requirements_snapshot: Q54Requirement[]; started_at: string; ends_at: string | null; }
-export interface Q54DraftError { type: Q54ErrorType; original: string; corrected: string; explanationVi: string; }
 export interface Q54DraftAssessment {
-  verdict: 'ACCEPTABLE' | 'NEEDS_REVISION'; summaryVi: string;
-  requirements: Array<{ requirementId: string; status: 'COVERED' | 'PARTIAL' | 'MISSING'; evidenceKo: string; suggestionVi: string }>;
-  structure: Array<{ label: string; status: 'GOOD' | 'NEEDS_REVISION'; messageVi: string }>;
-  logic: { status: 'COHERENT' | 'NEEDS_REVISION'; messageVi: string };
-  collocations: Array<{ original: string; suggestion: string; explanationVi: string }>;
-  repetition: Array<{ expression: string; count: number; alternatives: string[] }>;
-  cohesion: { status: 'GOOD' | 'NEEDS_REVISION'; messageVi: string };
-  formalStyle: { status: 'GOOD' | 'NEEDS_REVISION'; messageVi: string };
-  errors: Q54DraftError[]; usedPatterns: string[]; rewriteFocus: string[];
+  summaryVi: string;
+  summary: { overall: string; strengths: string[]; nextFocus: string[] };
+  coverage: Array<{ requirementId: string; status: 'COVERED' | 'PARTIAL' | 'MISSING'; evidence: Array<{ start: number; end: number; text: string }>; missingPointVi: string | null }>;
+  sentenceFunctions: Array<{ slot: 'MAIN_IDEA' | 'WHY' | 'RESULT'; status: 'GOOD' | 'WEAK' | 'MISSING'; commentVi: string; evidence: Array<{ start: number; end: number; text: string }> }>;
+  logic: { status: 'LOGIC_OK' | 'LOGIC_GAP' | 'LOGIC_ERROR'; severity: 'LOW' | 'MEDIUM' | 'HIGH'; chain: string[]; explanationVi: string; missingLink: string | null; evidence: Array<{ start: number; end: number; text: string }> } | null;
+  issues: Array<{ category: 'SPELLING' | 'PARTICLE' | 'GRAMMAR' | 'VOCABULARY' | 'COLLOCATION' | 'COHESION' | 'STYLE'; severity: 'LOW' | 'MEDIUM' | 'HIGH'; original: string; corrected: string; explanationVi: string }>;
+  repetition: Array<{ expression: string; count: number; shouldFix: boolean; alternatives: string[] }>;
+  nextDraft: { priority1: string; priority2: string | null; priority3: string | null };
 }
 export interface Q54WritingDraft { id: string; session_id: string | null; question_id: string; requirement_id: string | null; idea_id: string | null; unit_type: Q54DraftUnitType; draft_number: number; parent_draft_id: string | null; content_ko: string; assistance_stage: Q54BankStage; state: 'PROCESSING' | 'ASSESSED' | 'FAILED'; assessment_json: Q54DraftAssessment | null; created_at: string; }
 export interface Q54ErrorDrillItem { promptKo: string; promptVi: string; options: string[]; correctIndex: number; explanationVi: string; errorKey: string; }
