@@ -97,7 +97,7 @@ export interface Q54DraftAssessment {
   requirements: Array<{ requirementId: string; status: 'COVERED' | 'PARTIAL' | 'MISSING'; evidenceKo: string; suggestionVi: string }>;
   structure: Array<{ label: string; status: 'GOOD' | 'NEEDS_REVISION'; messageVi: string }>;
   logic: { status: 'COHERENT' | 'NEEDS_REVISION'; messageVi: string };
-  collocations: Array<{ expression: string; suggestion: string; explanationVi: string }>;
+  collocations: Array<{ original: string; suggestion: string; explanationVi: string }>;
   repetition: Array<{ expression: string; count: number; alternatives: string[] }>;
   cohesion: { status: 'GOOD' | 'NEEDS_REVISION'; messageVi: string };
   formalStyle: { status: 'GOOD' | 'NEEDS_REVISION'; messageVi: string };

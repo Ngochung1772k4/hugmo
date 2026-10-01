@@ -53,6 +53,17 @@ test('draft feedback covers requirements and deterministic repetition while dril
   assert.match(drillGenerator, /claim_q54_error_drill/);
 });
 
+test('draft assessment is grounded in the submitted content and scopes coverage by unit type', () => {
+  assert.match(assessor, /content\.includes\(original\)/);
+  assert.match(assessor, /content\.includes\(expression\)/);
+  assert.match(assessor, /content\.includes\(evidenceKo\)/);
+  assert.match(assessor, /Every grammar or collocation issue must include original copied exactly from that draft/);
+  assert.match(assessor, /Do not use previous drafts, conversation history, Error Notebook, examples, or reference answers as current-draft errors/);
+  assert.match(assessor, /const scopedRequirements = unitType === 'ESSAY' \? requirements \|\| \[\] : selectedRequirement \? \[selectedRequirement\] : \[\]/);
+  assert.match(assessor, /do not mark any other requirement missing/);
+  assert.match(assessor, /normalize\([^\n]+scopedRequirements, contentKo\)/);
+});
+
 test('the front end exposes the complete practice and review route family', () => {
   for (const route of ['/lab/drills', '/lab/rewrite/:errorId', '/lab/review/:draftId', '/lab/weakness', '/sessions/:sessionId/sprint', '/sessions/:sessionId/logic', '/sessions/:sessionId/sentence', '/sessions/:sessionId/compose/:unit']) {
     assert.match(app, new RegExp(route.replaceAll('/', '\\/')));
