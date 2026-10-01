@@ -94,10 +94,13 @@ export interface Q54TrainingSession { id: string; question_id: string; mode: Q54
 export interface Q54DraftAssessment {
   summaryVi: string;
   summary: { overall: string; strengths: string[]; nextFocus: string[] };
-  coverage: Array<{ requirementId: string; status: 'COVERED' | 'PARTIAL' | 'MISSING'; evidence: Array<{ start: number; end: number; text: string }>; missingPointVi: string | null }>;
+  coverage: Array<{ requirementId: string; status: 'COVERED' | 'PARTIAL' | 'MISSING'; evidence: Array<{ start: number; end: number; text: string }>; missingPointVi: string | null; componentCoverage: Array<{ component: string; status: 'COVERED' | 'MISSING'; evidence: Array<{ start: number; end: number; text: string }> }> }>;
   sentenceFunctions: Array<{ slot: 'MAIN_IDEA' | 'WHY' | 'RESULT'; status: 'GOOD' | 'WEAK' | 'MISSING'; commentVi: string; evidence: Array<{ start: number; end: number; text: string }> }>;
   logic: { status: 'LOGIC_OK' | 'LOGIC_GAP' | 'LOGIC_ERROR'; severity: 'LOW' | 'MEDIUM' | 'HIGH'; chain: string[]; explanationVi: string; missingLink: string | null; evidence: Array<{ start: number; end: number; text: string }> } | null;
-  issues: Array<{ category: 'SPELLING' | 'PARTICLE' | 'GRAMMAR' | 'VOCABULARY' | 'COLLOCATION' | 'COHESION' | 'STYLE'; severity: 'LOW' | 'MEDIUM' | 'HIGH'; original: string; corrected: string; explanationVi: string }>;
+  cohesion: { status: 'GOOD' | 'NEEDS_IMPROVEMENT'; connectors: Array<{ start: number; end: number; text: string }>; commentVi: string } | null;
+  formalStyle: { status: 'FORMAL_WRITTEN'; tone: 'HANDA_CHE'; evidence: Array<{ start: number; end: number; text: string }>; commentVi: string } | null;
+  issues: Array<{ kind: 'ERROR' | 'IMPROVEMENT'; category: 'SPELLING' | 'PARTICLE' | 'GRAMMAR' | 'VOCABULARY' | 'COLLOCATION' | 'COHESION' | 'STYLE'; severity: 'LOW' | 'MEDIUM' | 'HIGH'; original: string; corrected: string; explanationVi: string }>;
+  improvements: Array<{ kind: 'IMPROVEMENT' | 'EXPANSION'; suggestionVi: string; evidence: Array<{ start: number; end: number; text: string }> }>;
   repetition: Array<{ expression: string; count: number; shouldFix: boolean; alternatives: string[] }>;
   nextDraft: { priority1: string; priority2: string | null; priority3: string | null };
 }

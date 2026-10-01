@@ -32,7 +32,7 @@ async function edgeMessage(error: unknown, fallback: string) {
 const demoAssessment: Q54DraftAssessment = {
   summaryVi: 'Demo Mode stores the draft and shows a sample rubric. Online assessment validates feedback against the submitted content.',
   summary: { overall: 'Demo Mode stores the draft and shows a sample rubric. Online assessment validates feedback against the submitted content.', strengths: [], nextFocus: ['Check the main idea, reason, and result before submitting again.'] },
-  coverage: [], sentenceFunctions: [], logic: null, issues: [], repetition: [],
+  coverage: [], sentenceFunctions: [], logic: null, cohesion: null, formalStyle: null, issues: [], improvements: [], repetition: [],
   nextDraft: { priority1: 'Add a direct explanation for the requirement being practised.', priority2: null, priority3: null },
 };
 

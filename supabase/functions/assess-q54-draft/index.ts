@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { normalizeQ54Assessment } from '../_shared/q54-assessment-validation.mjs';
+import { getCompositeRequirementComponents, normalizeQ54Assessment } from '../_shared/q54-assessment-validation.mjs';
 import { Q54_ASSESSMENT_PROMPT_VERSION, Q54_ASSESSMENT_SCHEMA_VERSION, q54AssessmentSystemPrompt } from './system-prompt.mjs';
 
 const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
@@ -100,12 +100,14 @@ Deno.serve(async (req) => {
   }
 
   const model = Deno.env.get('GROQ_Q54_MODEL') || Deno.env.get('GROQ_KOREAN_MODEL') || 'qwen/qwen3.8-27b';
+  const requirementsForAssessment = context.requirementsAllowedForAssessment.map((requirement) => ({ ...requirement, compositeRequirementComponents: getCompositeRequirementComponents(requirement) }));
+  const selectedRequirementForAssessment = context.selectedRequirement ? { ...context.selectedRequirement, compositeRequirementComponents: getCompositeRequirementComponents(context.selectedRequirement) } : null;
   const payload = {
     unitType,
     submittedContent,
     questionSnapshot: context.questionSnapshot,
-    selectedRequirement: context.selectedRequirement,
-    requirementsAllowedForAssessment: context.requirementsAllowedForAssessment,
+    selectedRequirement: selectedRequirementForAssessment,
+    requirementsAllowedForAssessment: requirementsForAssessment,
   };
 
   try {
