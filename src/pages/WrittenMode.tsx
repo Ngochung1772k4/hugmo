@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { studySetService } from '../services/studySetService';
 import type {
@@ -16,6 +16,7 @@ import { WrittenInput } from '../components/written/WrittenInput';
 import { WrittenFeedback } from '../components/written/WrittenFeedback';
 import { WrittenResult } from '../components/written/WrittenResult';
 import { ProgressBar } from '../components/ProgressBar';
+import { getStudyCardLimit, selectStudyCards } from '../utils/studySelection';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 
 function shuffle<T>(array: T[]): T[] {
@@ -29,6 +30,7 @@ function shuffle<T>(array: T[]): T[] {
 
 export const WrittenMode: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { search } = useLocation();
   const { isDemo } = useAuth();
 
   const [studySet, setStudySet] = useState<StudySet | null>(null);
@@ -64,9 +66,10 @@ export const WrittenMode: React.FC = () => {
           setError('No vocabulary cards found in this study set.');
           return;
         }
+        const selectedCards = selectStudyCards(data.cards, getStudyCardLimit(search, data.cards.length));
         setStudySet(data);
-        setAllCards(data.cards);
-        setActiveCards(data.cards);
+        setAllCards(selectedCards);
+        setActiveCards(selectedCards);
       } catch (err: any) {
         setError(err?.message || 'Failed to load study set.');
       } finally {
@@ -74,7 +77,7 @@ export const WrittenMode: React.FC = () => {
       }
     };
     loadSet();
-  }, [id, isDemo]);
+  }, [id, isDemo, search]);
 
   // Current Card targets
   const currentCard = activeCards[currentIndex];

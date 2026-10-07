@@ -27,6 +27,7 @@ export const StudySetDetail: React.FC = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [studyCardCount, setStudyCardCount] = useState(0);
   const [readerContexts, setReaderContexts] = useState<Array<{ flashcardId: string; passageId: string; annotationId: string; title: string; context: string }>>([]);
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export const StudySetDetail: React.FC = () => {
           return;
         }
         setStudySet(data);
+        setStudyCardCount(Math.min(10, data.cards?.length || 0));
       } catch (err: any) {
         setError(err?.message || 'Error loading study set.');
       } finally {
@@ -108,8 +110,11 @@ export const StudySetDetail: React.FC = () => {
   }
 
   const cardCount = studySet.cards?.length || 0;
-  const canTakeQuiz = cardCount >= 4;
-  const canWrite = cardCount >= 1;
+  const selectedCardCount = Math.min(Math.max(studyCardCount || cardCount, 1), cardCount);
+  const studyQuery = `?limit=${selectedCardCount}`;
+  const canTakeQuiz = selectedCardCount >= 4;
+  const canWrite = selectedCardCount >= 1;
+  const quickCounts = [...new Set([5, 10, 20, cardCount])].filter((count) => count <= cardCount);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fadeIn">
@@ -157,6 +162,31 @@ export const StudySetDetail: React.FC = () => {
         )}
       </div>
 
+      {cardCount > 0 && <section className="mb-8 border border-slate-200 bg-white p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-slate-900">Số từ cho lượt học</p>
+            <p className="mt-1 text-sm text-slate-500">Chọn số thẻ muốn ôn trong lần này. Hệ thống lấy ngẫu nhiên từ set.</p>
+          </div>
+          <label className="text-sm font-semibold text-slate-700">
+            <span className="sr-only">Số thẻ muốn học</span>
+            <input
+              type="number"
+              min="1"
+              max={cardCount}
+              value={selectedCardCount}
+              onChange={(event) => setStudyCardCount(Math.min(Math.max(Number(event.target.value) || 1, 1), cardCount))}
+              className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-center font-bold text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+              aria-label="Số thẻ muốn học"
+            />
+            <span className="ml-2 text-slate-500">/ {cardCount} thẻ</span>
+          </label>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Chọn nhanh số thẻ">
+          {quickCounts.map((count) => <button key={count} type="button" onClick={() => setStudyCardCount(count)} aria-pressed={selectedCardCount === count} className={`min-w-12 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${selectedCardCount === count ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50'}`}>{count === cardCount ? 'Tất cả' : count}</button>)}
+        </div>
+      </section>}
+
       {/* Study Modes Selection Grid */}
       <div className="mb-10">
         <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">
@@ -166,7 +196,7 @@ export const StudySetDetail: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Mode 1: Flashcards */}
           <Link
-            to={`/study-sets/${id}/flashcards`}
+            to={`/study-sets/${id}/flashcards${studyQuery}`}
             className="group relative bg-gradient-to-br from-white to-slate-50 rounded-2xl p-6 border-2 border-slate-200 hover:border-brand-500 shadow-sm hover:shadow-lg transition-all duration-200 flex flex-col justify-between"
           >
             <div>
@@ -181,17 +211,17 @@ export const StudySetDetail: React.FC = () => {
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-brand-600">
-              <span>Start Flashcards &rarr;</span>
+              <span>Start Flashcards ({selectedCardCount}) →</span>
             </div>
           </Link>
 
           {/* Mode 2: Multiple Choice Quiz */}
           <Link
-            to={canTakeQuiz ? `/study-sets/${id}/quiz` : '#'}
+            to={canTakeQuiz ? `/study-sets/${id}/quiz${studyQuery}` : '#'}
             onClick={(e) => {
               if (!canTakeQuiz) {
                 e.preventDefault();
-                alert('This Study Set needs at least 4 cards for Multiple Choice mode.');
+                alert('Hãy chọn ít nhất 4 thẻ để học bằng Multiple Choice.');
               }
             }}
             className={`group relative bg-gradient-to-br from-white to-slate-50 rounded-2xl p-6 border-2 ${
@@ -220,13 +250,13 @@ export const StudySetDetail: React.FC = () => {
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-indigo-600">
-              <span>{canTakeQuiz ? 'Start Quiz &rarr;' : 'Min 4 cards needed'}</span>
+              <span>{canTakeQuiz ? `Start Quiz (${selectedCardCount}) →` : 'Chọn ít nhất 4 thẻ'}</span>
             </div>
           </Link>
 
           {/* Mode 3: Written Answer */}
           <Link
-            to={canWrite ? `/study-sets/${id}/write` : '#'}
+            to={canWrite ? `/study-sets/${id}/write${studyQuery}` : '#'}
             className={`group relative bg-gradient-to-br from-white to-slate-50 rounded-2xl p-6 border-2 ${
               canWrite
                 ? 'border-slate-200 hover:border-emerald-500 shadow-sm hover:shadow-lg cursor-pointer'
@@ -250,7 +280,7 @@ export const StudySetDetail: React.FC = () => {
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-bold text-emerald-600">
-              <span>Start Written &rarr;</span>
+              <span>Start Written ({selectedCardCount}) →</span>
             </div>
           </Link>
         </div>

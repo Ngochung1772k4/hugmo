@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { studySetService } from '../services/studySetService';
 import type { StudySet, Flashcard, QuizQuestion, QuizAnswerRecord } from '../types';
 import { QuizOption } from '../components/QuizOption';
 import { ProgressBar } from '../components/ProgressBar';
+import { getStudyCardLimit, selectStudyCards } from '../utils/studySelection';
 import confetti from 'canvas-confetti';
 import {
   ArrowLeft,
@@ -67,6 +68,7 @@ function generateQuestions(cards: Flashcard[]): QuizQuestion[] {
 
 export const QuizMode: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { search } = useLocation();
   const { isDemo } = useAuth();
 
   const [studySet, setStudySet] = useState<StudySet | null>(null);
@@ -110,9 +112,10 @@ export const QuizMode: React.FC = () => {
           setError('No cards found in this study set.');
           return;
         }
+        const selectedCards = selectStudyCards(data.cards, getStudyCardLimit(search, data.cards.length));
         setStudySet(data);
-        setCards(data.cards);
-        initQuiz(data.cards);
+        setCards(selectedCards);
+        initQuiz(selectedCards);
       } catch (err: any) {
         setError(err?.message || 'Failed to load study set.');
       } finally {
@@ -120,7 +123,7 @@ export const QuizMode: React.FC = () => {
       }
     };
     loadSet();
-  }, [id, isDemo]);
+  }, [id, isDemo, search]);
 
   const handleSelectOption = (idx: number) => {
     if (isAnswered) return;
@@ -195,7 +198,7 @@ export const QuizMode: React.FC = () => {
         </p>
         <div className="pt-2 flex flex-col gap-2">
           <Link
-            to={`/study-sets/${id}/flashcards`}
+            to={`/study-sets/${id}/flashcards${search}`}
             className="w-full py-2.5 px-4 rounded-xl bg-brand-600 text-white font-semibold text-sm hover:bg-brand-700 transition-colors"
           >
             Study with Flashcards instead

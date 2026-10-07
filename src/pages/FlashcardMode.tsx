@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { studySetService } from '../services/studySetService';
 import type { Flashcard as FlashcardType, StudySet } from '../types';
 import { Flashcard } from '../components/Flashcard';
 import { ProgressBar } from '../components/ProgressBar';
+import { getStudyCardLimit, selectStudyCards } from '../utils/studySelection';
 import {
   ArrowLeft,
   ChevronLeft,
@@ -17,6 +18,7 @@ import {
 
 export const FlashcardMode: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { search } = useLocation();
   const { isDemo } = useAuth();
 
   const [studySet, setStudySet] = useState<StudySet | null>(null);
@@ -37,7 +39,7 @@ export const FlashcardMode: React.FC = () => {
           return;
         }
         setStudySet(data);
-        setCards(data.cards);
+        setCards(selectStudyCards(data.cards, getStudyCardLimit(search, data.cards.length)));
         setCurrentIndex(0);
         setIsFlipped(false);
       } catch (err: any) {
@@ -47,7 +49,7 @@ export const FlashcardMode: React.FC = () => {
       }
     };
     loadCards();
-  }, [id, isDemo]);
+  }, [id, isDemo, search]);
 
   const handleNext = useCallback(() => {
     if (cards.length === 0) return;
@@ -80,7 +82,7 @@ export const FlashcardMode: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if user is typing in an input
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
         return;
       }
 
@@ -142,7 +144,7 @@ export const FlashcardMode: React.FC = () => {
           <h1 className="text-base font-bold text-slate-900 line-clamp-1">
             {studySet?.title}
           </h1>
-          <span className="text-xs text-slate-400">Flashcard Mode</span>
+          <span className="text-xs text-slate-400">Flashcard Mode · {cards.length} thẻ</span>
         </div>
 
         {/* Quick actions (Shuffle, Restart) */}
